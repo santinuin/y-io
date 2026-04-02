@@ -1,0 +1,48 @@
+---
+interface Props {
+  title?: string;
+}
+const { title = "Algo especial se acerca..." } = Astro.props;
+---
+
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="generator" content={Astro.generator} />
+    <title>{title}</title>
+  </head>
+  <body>
+    <slot />
+  </body>
+</html>
+
+<style is:global>
+  :root {
+    --color-bg: #0d0d1a;
+    --color-surface: #1a1a2e;
+    --color-accent: #e040fb;
+    --color-accent-2: #7c4dff;
+    --color-text: #f0e6ff;
+    --color-text-muted: #9e8fbf;
+    --font-display: 'Georgia', serif;
+  }
+
+  *, *::before, *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    background-color: var(--color-bg);
+    color: var(--color-text);
+    font-family: var(--font-display);
+    overflow-x: hidden;
+  }
+</style>

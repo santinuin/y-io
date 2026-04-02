@@ -1,0 +1,141 @@
+---
+const message = "✨ Algo especial se acerca... ✨";
+const letters = message.split("");
+---
+
+<section class="hero" id="hero">
+  <div class="hero-inner">
+    <p class="hero-text" id="hero-text" aria-label={message}>
+      {letters.map((char, i) => (
+        <span
+          class="hero-char"
+          style={`--i: ${i}; --total: ${letters.length};`}
+        >
+          {char === " " ? "\u00A0" : char}
+        </span>
+      ))}
+    </p>
+    <div class="scroll-hint" id="scroll-hint">
+      <span>Baja para ver tu sorpresa</span>
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <path d="M12 5v14M5 12l7 7 7-7" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </div>
+  </div>
+</section>
+
+<script>
+  const heroSection = document.getElementById("hero") as HTMLElement;
+  const heroText = document.getElementById("hero-text") as HTMLElement;
+  const scrollHint = document.getElementById("scroll-hint") as HTMLElement;
+  const chars = heroText.querySelectorAll<HTMLElement>(".hero-char");
+
+  function onScroll() {
+    const maxScroll = heroSection.offsetHeight;
+    const progress = Math.min(window.scrollY / maxScroll, 1);
+
+    // Efecto parallax principal: desplaza el texto a la derecha
+    heroText.style.transform = `translateX(${progress * 90}px)`;
+
+    // Efecto wave: cada letra tiene un delay y amplitud diferente
+    chars.forEach((char, i) => {
+      const wave = Math.sin(progress * Math.PI + (i / chars.length) * Math.PI * 2);
+      char.style.transform = `translateY(${wave * 18 * progress}px)`;
+      char.style.opacity = String(Math.max(0.2, 1 - progress * 0.8));
+    });
+
+    // Ocultar el hint de scroll al bajar
+    scrollHint.style.opacity = String(Math.max(0, 1 - progress * 4));
+  }
+
+  window.addEventListener("scroll", onScroll, { passive: true });
+</script>
+
+<style>
+  .hero {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+    background: radial-gradient(ellipse at 50% 40%, #1e1040 0%, var(--color-bg) 70%);
+    overflow: hidden;
+  }
+
+  /* Estrellas decorativas con pseudoelemento */
+  .hero::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background-image:
+      radial-gradient(1px 1px at 20% 30%, rgba(255,255,255,0.6) 0%, transparent 100%),
+      radial-gradient(1px 1px at 60% 15%, rgba(255,255,255,0.4) 0%, transparent 100%),
+      radial-gradient(1.5px 1.5px at 80% 70%, rgba(255,255,255,0.5) 0%, transparent 100%),
+      radial-gradient(1px 1px at 10% 80%, rgba(255,255,255,0.3) 0%, transparent 100%),
+      radial-gradient(1px 1px at 45% 90%, rgba(255,255,255,0.4) 0%, transparent 100%),
+      radial-gradient(1.5px 1.5px at 90% 40%, rgba(255,255,255,0.6) 0%, transparent 100%);
+    pointer-events: none;
+  }
+
+  .hero-inner {
+    text-align: center;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2rem;
+  }
+
+  .hero-text {
+    font-size: clamp(1.8rem, 5vw, 3.5rem);
+    font-weight: 400;
+    letter-spacing: 0.05em;
+    color: var(--color-text);
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0;
+    will-change: transform;
+    line-height: 1.4;
+    text-shadow:
+      0 0 30px rgba(224, 64, 251, 0.4),
+      0 0 60px rgba(124, 77, 255, 0.2);
+  }
+
+  .hero-char {
+    display: inline-block;
+    will-change: transform, opacity;
+    animation: fadeInChar 0.6s ease both;
+    animation-delay: calc(var(--i) * 0.04s);
+  }
+
+  @keyframes fadeInChar {
+    from {
+      opacity: 0;
+      transform: translateY(-20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .scroll-hint {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--color-text-muted);
+    font-size: 0.85rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    animation: pulse 2s ease-in-out infinite;
+    transition: opacity 0.2s ease;
+  }
+
+  @keyframes pulse {
+    0%, 100% { transform: translateY(0); opacity: 0.7; }
+    50% { transform: translateY(6px); opacity: 1; }
+  }
+</style>
