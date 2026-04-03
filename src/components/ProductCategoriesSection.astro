@@ -318,16 +318,25 @@ const gifts: Gift[] = [
     }));
 
     /* En mobile, permitir scroll cuando el dedo cae en área vacía.
-       La fase de captura dispara ANTES que los listeners de Matter.js (bubble),
-       así que stopImmediatePropagation evita que Matter.js llame preventDefault
-       y bloquee el scroll del navegador. */
+       Interceptamos touchstart Y touchmove en fase de captura (antes que
+       los listeners de Matter.js en bubble), de modo que Matter.js nunca
+       llame preventDefault() y el navegador pueda scrollear. */
+    let touchOnBody = false;
+
     pool.addEventListener("touchstart", (e: TouchEvent) => {
       const rect  = pool.getBoundingClientRect();
       const touch = e.touches[0];
       const point = { x: touch.clientX - rect.left, y: touch.clientY - rect.top };
-      if (Query.point(bodies, point).length === 0) {
-        e.stopImmediatePropagation();
-      }
+      touchOnBody = Query.point(bodies, point).length > 0;
+      if (!touchOnBody) e.stopImmediatePropagation();
+    }, { capture: true, passive: true });
+
+    pool.addEventListener("touchmove", (e: TouchEvent) => {
+      if (!touchOnBody) e.stopImmediatePropagation();
+    }, { capture: true, passive: true });
+
+    pool.addEventListener("touchend", () => {
+      touchOnBody = false;
     }, { capture: true, passive: true });
 
     /* Clic vs drag */
