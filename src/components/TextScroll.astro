@@ -73,14 +73,34 @@ const totalWidth = chars.length * charSpacing;
   const animSpeed    = parseFloat(el.dataset.animSpeed   ?? "0.5");
   const lerpFactor   = parseFloat(el.dataset.lerpFactor  ?? "0.1");
   const total        = parseInt  (el.dataset.total       ?? "22");
-  const totalWidth   = parseFloat(el.dataset.totalWidth  ?? "836");
   const scrollDriven = el.dataset.scrollDriven === "true";
 
-  // offsetX centra el bloque de letras en x=0 (origen del contenedor)
-  const offsetX = -((total - 1) * charSpacing) / 2;
+  /* ── Medir el ancho real de cada carácter con la Canvas API ──
+     Esto evita solapamiento cuando el texto tiene letras de ancho
+     variable (H, A, m, i, l, espacio, etc.)                      */
+  const cs   = getComputedStyle(charEls[0]);
+  const font = `${cs.fontWeight} ${cs.fontSize} ${cs.fontFamily}`;
 
-  let offset       = 0;  // offset actual (lerpeado)
-  let targetOffset = 0;  // offset objetivo (dictado por scroll o tiempo)
+  const mc = document.createElement("canvas").getContext("2d")!;
+  mc.font = font;
+
+  // Padding extra entre letras (px). Ajustá si querés más/menos aire.
+  const PAD = 6;
+
+  const charWidths: number[] = Array.from(charEls).map(
+    (s) => mc.measureText(s.textContent ?? " ").width
+  );
+
+  // Posición X del borde izquierdo de cada carácter (acumulada)
+  const xPos: number[] = [];
+  let cursor = 0;
+  charWidths.forEach((w) => { xPos.push(cursor); cursor += w + PAD; });
+
+  const measuredTotal  = cursor - PAD;           // ancho total sin padding final
+  const measuredOffsetX = -measuredTotal / 2;    // para centrar en x=0
+
+  let offset       = 0;
+  let targetOffset = 0;
   let scrollProgress = 0;
 
   /* ── Fuente del scroll (wrapper sticky) ── */
@@ -97,22 +117,18 @@ const totalWidth = chars.length * charSpacing;
     }
 
     if (scrollDriven) {
-      // Viaje completo: derecha → centro → izquierda
-      // progress=0   → offset=-maxOffset  (fuera por la derecha)
-      // progress=0.5 → offset=0           (centrado)
-      // progress=1   → offset=+maxOffset  (fuera por la izquierda)
-      const maxOffset = window.innerWidth / 2 + totalWidth / 2;
+      const maxOffset = window.innerWidth / 2 + measuredTotal / 2;
       targetOffset = -maxOffset + scrollProgress * 2 * maxOffset;
     }
   }
 
   window.addEventListener("scroll", onScroll, { passive: true });
-  // Calcular estado inicial
   onScroll();
 
   /* ── Función de posicionamiento de cada carácter ── */
   function getTransform(index: number, currentOffset: number) {
-    const x     = offsetX + index * charSpacing - currentOffset;
+    // Centro del carácter (su mitad de ancho), desplazado por el offset
+    const x     = measuredOffsetX + xPos[index] + charWidths[index] / 2 - currentOffset;
     const angle = (x / wavelength) * 2 * Math.PI;
     const y     = offsetY - amplitude * Math.sin(angle);
     const dyDx  = amplitude * (2 * Math.PI / wavelength) * Math.cos(angle);
@@ -123,12 +139,10 @@ const totalWidth = chars.length * charSpacing;
   /* ── Loop de render ── */
   function render() {
     if (scrollDriven) {
-      // Lerp suave hacia el offset dictado por el scroll
       offset += (targetOffset - offset) * lerpFactor;
     } else {
-      // Modo autónomo: avanza solo
       offset += animSpeed;
-      if (offset > totalWidth) offset = 0;
+      if (offset > measuredTotal) offset = 0;
     }
 
     charEls.forEach((span, i) => {
