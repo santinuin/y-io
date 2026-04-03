@@ -1,0 +1,449 @@
+---
+/**
+ * ProductCategoriesSection — ball pool con física real (Matter.js).
+ *
+ * Las "bolas" son elementos DOM (<li>) cuyas posiciones se actualizan
+ * frame a frame desde el motor de física. NO hay canvas visible.
+ * El MouseConstraint de Matter.js permite arrastrar las bolas.
+ * Un clic sin arrastre abre el overlay del regalo.
+ */
+
+interface Gift {
+  id:    string;
+  label: string;
+  emoji: string;
+  desc:  string;
+  hue:   number; // HSL hue para el color de la bola
+}
+
+const gifts: Gift[] = [
+  { id: "cena",     label: "Cena romántica",          emoji: "🍷", desc: "Una noche especial solo para los dos.",           hue: 270 },
+  { id: "escapada", label: "Escapada de fin de semana", emoji: "✈️", desc: "Un destino sorpresa, solo vos y yo.",            hue: 290 },
+  { id: "spa",      label: "Spa day",                  emoji: "💆", desc: "Un día de descanso y mimos que te merecés.",     hue: 250 },
+  { id: "concierto",label: "Concierto sorpresa",       emoji: "🎶", desc: "Tu artista favorito, juntos en vivo.",           hue: 310 },
+  { id: "picnic",   label: "Picnic bajo las estrellas",emoji: "🌙", desc: "Una noche mágica al aire libre.",                hue: 240 },
+  { id: "pelis",    label: "Día de películas",         emoji: "🎬", desc: "Pijamas, pochoclo y maratón de tus favoritas.", hue: 280 },
+  { id: "masaje",   label: "Masaje",                   emoji: "💆‍♀️", desc: "Una hora de relajación total.",                hue: 260 },
+  { id: "desayuno", label: "Desayuno en cama",         emoji: "☕", desc: "Empezar el día con mimo y café.",               hue: 300 },
+  { id: "sorpresa", label: "Sorpresa especial",        emoji: "🎁", desc: "Esto es solo el comienzo...",                   hue: 320 },
+];
+---
+
+<section class="pcs" id="pcs">
+
+  <!-- Encabezado -->
+  <div class="pcs-header">
+    <h2 class="pcs-title">Tus regalos te esperan</h2>
+    <p class="pcs-subtitle">Arrastrá o tocá una bola para descubrir tu sorpresa</p>
+  </div>
+
+  <!-- Pool de bolas -->
+  <div class="pcs-pool" id="pcs-pool">
+    <ul class="pcs-list" id="pcs-list">
+      {gifts.map((g, i) => (
+        <li
+          class="pcs-ball"
+          id={`ball-${g.id}`}
+          data-index={i}
+          style={`--hue: ${g.hue};`}
+        >
+          <div class="pcs-ball-inner">
+            <span class="pcs-emoji" aria-hidden="true">{g.emoji}</span>
+            <span class="pcs-label">{g.label}</span>
+          </div>
+        </li>
+      ))}
+    </ul>
+  </div>
+
+  <!-- Overlay de regalo -->
+  <div class="pcs-overlay" id="pcs-overlay" aria-hidden="true">
+    <div class="pcs-card">
+      <div class="pcs-card-emoji" id="pcs-card-emoji">🎁</div>
+      <h3  class="pcs-card-title" id="pcs-card-title">Regalo</h3>
+      <p   class="pcs-card-desc"  id="pcs-card-desc">¡Una sorpresa especial para vos!</p>
+      <button class="pcs-card-close" id="pcs-card-close">Cerrar ✕</button>
+    </div>
+  </div>
+
+</section>
+
+<script>
+  import Matter from "matter-js";
+
+  const {
+    Engine, Runner, Bodies, Events,
+    Composite, Mouse, MouseConstraint, Query, Body,
+  } = Matter;
+
+  /* ── Referencias DOM ── */
+  const section  = document.getElementById("pcs")!;
+  const pool     = document.getElementById("pcs-pool")!;
+  const list     = document.getElementById("pcs-list")!;
+  const overlay  = document.getElementById("pcs-overlay")!;
+  const cardEmoji = document.getElementById("pcs-card-emoji")!;
+  const cardTitle = document.getElementById("pcs-card-title")!;
+  const cardDesc  = document.getElementById("pcs-card-desc")!;
+  const closeBtn  = document.getElementById("pcs-card-close")!;
+  const ballEls   = Array.from(list.querySelectorAll<HTMLElement>(".pcs-ball"));
+
+  /* ── Datos de regalos (espejo del frontmatter) ── */
+  const GIFTS = [
+    { id: "cena",      label: "Cena romántica",           emoji: "🍷", desc: "Una noche especial solo para los dos."           },
+    { id: "escapada",  label: "Escapada de fin de semana", emoji: "✈️", desc: "Un destino sorpresa, solo vos y yo."            },
+    { id: "spa",       label: "Spa day",                   emoji: "💆", desc: "Un día de descanso y mimos que te merecés."     },
+    { id: "concierto", label: "Concierto sorpresa",        emoji: "🎶", desc: "Tu artista favorito, juntos en vivo."           },
+    { id: "picnic",    label: "Picnic bajo las estrellas", emoji: "🌙", desc: "Una noche mágica al aire libre."                },
+    { id: "pelis",     label: "Día de películas",          emoji: "🎬", desc: "Pijamas, pochoclo y maratón de tus favoritas." },
+    { id: "masaje",    label: "Masaje",                    emoji: "💆‍♀️", desc: "Una hora de relajación total."                },
+    { id: "desayuno",  label: "Desayuno en cama",          emoji: "☕", desc: "Empezar el día con mimo y café."               },
+    { id: "sorpresa",  label: "Sorpresa especial",         emoji: "🎁", desc: "Esto es solo el comienzo..."                   },
+  ];
+
+  let initialized = false;
+
+  /* ══════════════════════════════════════════
+     INICIALIZACIÓN DE MATTER.JS
+  ══════════════════════════════════════════ */
+  function initPhysics() {
+    const W = pool.offsetWidth;
+    const H = pool.offsetHeight;
+
+    // Radio responsivo: cabe 3 columnas con un poco de margen
+    const R = Math.min(Math.floor(W / 7), 85);
+    const D = R * 2;
+
+    // Aplicar tamaño a los <li>
+    ballEls.forEach((li) => {
+      li.style.width  = `${D}px`;
+      li.style.height = `${D}px`;
+    });
+
+    /* ── Motor (sin Render) ── */
+    const engine = Engine.create({ gravity: { x: 0, y: 1.3 } });
+
+    /* ── Paredes estáticas ── */
+    const t = 60; // grosor de las paredes
+    Composite.add(engine.world, [
+      Bodies.rectangle(W / 2, H + t / 2, W + t * 2, t, { isStatic: true, label: "wall" }),  // suelo
+      Bodies.rectangle(-t / 2, H / 2, t, H * 2,        { isStatic: true, label: "wall" }),  // izquierda
+      Bodies.rectangle(W + t / 2, H / 2, t, H * 2,     { isStatic: true, label: "wall" }),  // derecha
+    ]);
+
+    /* ── Cuerpos circulares — caen desde arriba en columnas ── */
+    const cols   = 3;
+    const colW   = W / cols;
+    const bodies = GIFTS.map((_, i) => {
+      const col  = i % cols;
+      const row  = Math.floor(i / cols);
+      const x    = colW * col + colW / 2 + (Math.random() - 0.5) * colW * 0.3;
+      const y    = -R - row * (D + 30) - Math.random() * 40;
+      return Bodies.circle(x, y, R, {
+        restitution: 0.25,
+        friction:    0.6,
+        frictionAir: 0.015,
+        label:       GIFTS[i].id,
+      });
+    });
+    Composite.add(engine.world, bodies);
+
+    /* ── Sincronizar DOM con física ── */
+    Events.on(engine, "afterUpdate", () => {
+      bodies.forEach((body, i) => {
+        const li = ballEls[i];
+        const x  = body.position.x - R;
+        const y  = body.position.y - R;
+        li.style.transform = `translate(${x.toFixed(1)}px, ${y.toFixed(1)}px) rotate(${body.angle.toFixed(4)}rad)`;
+      });
+    });
+
+    /* ── MouseConstraint para arrastrar bolas ── */
+    // Las bolas tienen pointer-events:none; el mouse opera sobre el pool
+    const mouse = Mouse.create(pool);
+    mouse.pixelRatio = window.devicePixelRatio || 1;
+    const mc = MouseConstraint.create(engine, {
+      mouse,
+      constraint: { stiffness: 0.15, damping: 0.1, render: { visible: false } },
+    });
+    Composite.add(engine.world, mc);
+
+    /* ── Detección de clic (click ≠ drag) ── */
+    let downX = 0, downY = 0, dragging = false;
+
+    pool.addEventListener("pointerdown", (e: PointerEvent) => {
+      downX    = e.clientX;
+      downY    = e.clientY;
+      dragging = false;
+    });
+
+    pool.addEventListener("pointermove", (e: PointerEvent) => {
+      if (Math.abs(e.clientX - downX) > 6 || Math.abs(e.clientY - downY) > 6) {
+        dragging = true;
+      }
+    });
+
+    pool.addEventListener("pointerup", (e: PointerEvent) => {
+      if (dragging) return;
+
+      const rect  = pool.getBoundingClientRect();
+      const point = { x: e.clientX - rect.left, y: e.clientY - rect.top };
+      const hits  = Query.point(bodies, point);
+
+      if (hits.length > 0) {
+        const idx = bodies.indexOf(hits[0]);
+        if (idx >= 0) {
+          // Pequeño impulso al tocar
+          Body.applyForce(hits[0], hits[0].position, { x: 0, y: -0.035 * R });
+          showGift(idx);
+        }
+      }
+    });
+
+    /* ── Cursor: grab sobre bolas ── */
+    pool.addEventListener("mousemove", (e: MouseEvent) => {
+      const rect  = pool.getBoundingClientRect();
+      const point = { x: e.clientX - rect.left, y: e.clientY - rect.top };
+      const hit   = Query.point(bodies, point).length > 0;
+      pool.style.cursor = hit ? "grab" : "default";
+    });
+
+    /* ── Runner ── */
+    const runner = Runner.create();
+    Runner.run(runner, engine);
+
+    /* ── Parar la simulación cuando todo se calme (ahorra CPU) ── */
+    let settleTimer = 0;
+    Events.on(engine, "afterUpdate", () => {
+      const allSlow = Composite.allBodies(engine.world)
+        .filter(b => !b.isStatic)
+        .every(b => b.speed < 0.5);
+
+      if (allSlow) {
+        settleTimer++;
+        if (settleTimer > 120) Runner.stop(runner); // 2 s a 60 fps
+      } else {
+        settleTimer = 0;
+      }
+    });
+
+    /* ── Reactivar la simulación al hacer clic/drag ── */
+    pool.addEventListener("pointerdown", () => {
+      settleTimer = 0;
+      Runner.run(runner, engine);
+    });
+  }
+
+  /* ══════════════════════════════════════════
+     OVERLAY DE REGALO
+  ══════════════════════════════════════════ */
+  function showGift(index: number) {
+    const g = GIFTS[index];
+    cardEmoji.textContent = g.emoji;
+    cardTitle.textContent = g.label;
+    cardDesc.textContent  = g.desc;
+    overlay.classList.add("visible");
+    overlay.setAttribute("aria-hidden", "false");
+  }
+
+  closeBtn.addEventListener("click", closeOverlay);
+  overlay.addEventListener("click", (e) => { if (e.target === overlay) closeOverlay(); });
+  function closeOverlay() {
+    overlay.classList.remove("visible");
+    overlay.setAttribute("aria-hidden", "true");
+  }
+
+  /* ══════════════════════════════════════════
+     INTERSECTION OBSERVER — diferir la física
+  ══════════════════════════════════════════ */
+  new IntersectionObserver((entries) => {
+    if (entries[0].isIntersecting && !initialized) {
+      initialized = true;
+      initPhysics();
+    }
+  }, { threshold: 0.25 }).observe(section);
+</script>
+
+<style>
+  /* ── Sección ── */
+  .pcs {
+    position: relative;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    background: linear-gradient(180deg, var(--color-bg) 0%, #110820 100%);
+    padding-top: 4rem;
+    overflow: hidden;
+  }
+
+  /* ── Encabezado ── */
+  .pcs-header {
+    text-align: center;
+    z-index: 1;
+    padding: 0 1rem 1.5rem;
+  }
+  .pcs-title {
+    font-size: clamp(1.6rem, 4vw, 2.8rem);
+    font-weight: 400;
+    color: var(--color-text);
+    text-shadow: 0 0 40px rgba(224, 64, 251, 0.5);
+    margin-bottom: 0.5rem;
+  }
+  .pcs-subtitle {
+    color: var(--color-text-muted);
+    font-size: 0.9rem;
+    letter-spacing: 0.08em;
+  }
+
+  /* ── Pool ── */
+  .pcs-pool {
+    position: relative;
+    flex: 1;
+    min-height: 520px;
+    width: 100%;
+    /* Las bolas se posicionan con transform desde arriba-izquierda */
+    overflow: hidden;
+  }
+
+  .pcs-list {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+
+  /* ── Bola individual ── */
+  .pcs-ball {
+    position: absolute;
+    top: 0; left: 0;
+    /* Tamaño se establece desde JS según el viewport */
+    will-change: transform;
+    /* pointer-events:none → el mouse opera en el pool para drag */
+    pointer-events: none;
+  }
+
+  .pcs-ball-inner {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 12px;
+    text-align: center;
+    /* Color radial basado en --hue del padre */
+    background: radial-gradient(
+      circle at 35% 35%,
+      hsl(var(--hue), 60%, 45%) 0%,
+      hsl(var(--hue), 70%, 28%) 100%
+    );
+    border: 1.5px solid hsl(var(--hue), 80%, 60%);
+    box-shadow:
+      inset 0 2px 8px rgba(255,255,255,0.15),
+      0 4px 20px hsl(var(--hue), 70%, 20%);
+    /* Brillo especular */
+    position: relative;
+    overflow: hidden;
+  }
+
+  .pcs-ball-inner::before {
+    content: "";
+    position: absolute;
+    top: 10%; left: 15%;
+    width: 35%; height: 25%;
+    background: radial-gradient(ellipse, rgba(255,255,255,0.3), transparent);
+    border-radius: 50%;
+    pointer-events: none;
+  }
+
+  .pcs-emoji {
+    font-size: clamp(1.4rem, 4vw, 2rem);
+    line-height: 1;
+    display: block;
+  }
+
+  .pcs-label {
+    font-size: clamp(0.55rem, 1.2vw, 0.75rem);
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.92);
+    line-height: 1.2;
+    letter-spacing: 0.02em;
+  }
+
+  /* ── Overlay de regalo ── */
+  .pcs-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+    backdrop-filter: blur(4px);
+  }
+  .pcs-overlay.visible {
+    opacity: 1;
+    pointer-events: all;
+  }
+
+  .pcs-card {
+    background: linear-gradient(135deg, #1e0f35 0%, #2d1060 100%);
+    border: 1px solid rgba(224, 64, 251, 0.35);
+    border-radius: 1.5rem;
+    padding: 2.5rem 3rem;
+    text-align: center;
+    max-width: 380px;
+    width: 90%;
+    box-shadow: 0 0 40px rgba(224, 64, 251, 0.2), 0 20px 60px rgba(0,0,0,0.5);
+    transform: scale(0.85);
+    transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+  .pcs-overlay.visible .pcs-card {
+    transform: scale(1);
+  }
+
+  .pcs-card-emoji {
+    font-size: 4rem;
+    margin-bottom: 1rem;
+    display: block;
+    animation: spin-in 0.5s ease both;
+  }
+  @keyframes spin-in {
+    from { transform: rotate(-30deg) scale(0); opacity: 0; }
+    to   { transform: rotate(0deg)  scale(1); opacity: 1; }
+  }
+
+  .pcs-card-title {
+    font-size: 1.5rem;
+    font-weight: 400;
+    color: var(--color-text);
+    margin-bottom: 0.75rem;
+  }
+  .pcs-card-desc {
+    color: var(--color-text-muted);
+    font-size: 0.95rem;
+    line-height: 1.6;
+    margin-bottom: 1.8rem;
+  }
+  .pcs-card-close {
+    background: linear-gradient(135deg, var(--color-accent-2), var(--color-accent));
+    color: #fff;
+    border: none;
+    border-radius: 2rem;
+    padding: 0.65rem 2rem;
+    font-size: 0.9rem;
+    letter-spacing: 0.05em;
+    cursor: pointer;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+  }
+  .pcs-card-close:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(224, 64, 251, 0.35);
+  }
+</style>
