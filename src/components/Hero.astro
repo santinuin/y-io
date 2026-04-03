@@ -1,48 +1,67 @@
 ---
 import WaveText from "./WaveText.astro";
-const message = "✨ Algo especial se acerca ✨";
+const message = "Amoooooooooooooooooooooooollll";
 ---
 
-<section class="hero" id="hero">
-  <div class="hero-inner">
-    <WaveText
-      text={message}
-      amplitude={30}
-      frequency={0.9}
-      charWidth={28}
-      fontSize={34}
-      speed={1.2}
-    />
-    <div class="scroll-hint" id="scroll-hint">
-      <span>Baja para ver tu sorpresa</span>
-      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-        <path d="M12 5v14M5 12l7 7 7-7" stroke="currentColor" stroke-width="2"
-              stroke-linecap="round" stroke-linejoin="round"/>
-      </svg>
+<!--
+  hero-sticky-wrapper: 300vh de alto
+  → el hero queda fijo (sticky) los primeros 100vh del viewport
+    mientras el usuario scrollea los 200vh de espacio de animación.
+  → cuando scrollProgress llega a 1, el sticky se "suelta" y
+    la sección de regalos sube naturalmente.
+-->
+<div class="hero-sticky-wrapper" id="hero-sticky-wrapper">
+  <section class="hero" id="hero">
+    <div class="hero-inner">
+      <WaveText
+        text={message}
+        amplitude={32}
+        frequency={0.85}
+        charWidth={24}
+        fontSize={34}
+        speed={1.1}
+        scrollDriven={true}
+      />
+      <div class="scroll-hint" id="scroll-hint">
+        <span>Bajá para ver tu sorpresa</span>
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <path d="M12 5v14M5 12l7 7 7-7" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
     </div>
-  </div>
-</section>
+  </section>
+</div>
 
 <script>
-  const heroSection  = document.getElementById("hero") as HTMLElement;
-  const scrollHint   = document.getElementById("scroll-hint") as HTMLElement;
+  const wrapper   = document.getElementById("hero-sticky-wrapper") as HTMLElement;
+  const scrollHint = document.getElementById("scroll-hint") as HTMLElement;
 
   function onScroll() {
-    const progress = Math.min(window.scrollY / heroSection.offsetHeight, 1);
-    // El hint de scroll se desvanece al empezar a bajar
-    scrollHint.style.opacity = String(Math.max(0, 1 - progress * 4));
+    const scrollableH = wrapper.offsetHeight - window.innerHeight; // 200vh aprox
+    const progress    = Math.min(window.scrollY / scrollableH, 1);
+
+    // El hint desaparece en el primer 20% del scroll
+    scrollHint.style.opacity = String(Math.max(0, 1 - progress * 5));
   }
 
   window.addEventListener("scroll", onScroll, { passive: true });
 </script>
 
 <style>
+  /* Wrapper alto: da el espacio de scroll que "consume" la animación */
+  .hero-sticky-wrapper {
+    height: 300vh;
+  }
+
+  /* El hero ocupa 100vh y se queda pegado al top mientras el wrapper scrollea */
   .hero {
-    position: relative;
+    position: sticky;
+    top: 0;
+    height: 100vh;
     display: flex;
     align-items: center;
     justify-content: center;
-    height: 100vh;
     background: radial-gradient(ellipse at 50% 40%, #1e1040 0%, var(--color-bg) 70%);
     overflow: hidden;
   }
@@ -70,7 +89,6 @@ const message = "✨ Algo especial se acerca ✨";
     gap: 3rem;
   }
 
-  /* Estilo del texto de la ola — hereda al WaveText */
   .hero-inner :global(.wt-char) {
     color: var(--color-text);
     font-family: var(--font-display);
@@ -95,6 +113,6 @@ const message = "✨ Algo especial se acerca ✨";
 
   @keyframes pulse {
     0%, 100% { transform: translateY(0); opacity: 0.7; }
-    50% { transform: translateY(6px); opacity: 1; }
+    50%       { transform: translateY(6px); opacity: 1; }
   }
 </style>
