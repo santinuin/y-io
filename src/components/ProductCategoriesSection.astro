@@ -181,18 +181,30 @@ const gifts: Gift[] = [
       if (hits.length > 0) {
         const idx = bodies.indexOf(hits[0]);
         if (idx >= 0) {
-          Body.applyForce(hits[0], hits[0].position, { x: 0, y: -0.04 * BOX_H });
           boxEls[idx].classList.add("revealed");
           showGift(idx);
         }
       }
     });
 
-    /* Cursor grab */
+    /* Hover: ilumina la caja bajo el cursor */
+    let hoveredIdx = -1;
     pool.addEventListener("mousemove", (e: MouseEvent) => {
       const rect  = pool.getBoundingClientRect();
       const point = { x: e.clientX - rect.left, y: e.clientY - rect.top };
-      pool.style.cursor = Query.point(bodies, point).length > 0 ? "grab" : "default";
+      const hits  = Query.point(bodies, point);
+
+      const newIdx = hits.length > 0 ? bodies.indexOf(hits[0]) : -1;
+      if (newIdx !== hoveredIdx) {
+        if (hoveredIdx >= 0) boxEls[hoveredIdx].classList.remove("hovered");
+        hoveredIdx = newIdx;
+        if (hoveredIdx >= 0) boxEls[hoveredIdx].classList.add("hovered");
+      }
+      pool.style.cursor = newIdx >= 0 ? "pointer" : "default";
+    });
+    pool.addEventListener("mouseleave", () => {
+      if (hoveredIdx >= 0) boxEls[hoveredIdx].classList.remove("hovered");
+      hoveredIdx = -1;
     });
 
     /* Runner + auto-pausa cuando todo se calma */
@@ -243,7 +255,7 @@ const gifts: Gift[] = [
     display: flex;
     flex-direction: column;
     align-items: center;
-    background: #ff85a1;
+    background: var(--color-bg);
     padding-top: 3rem;
     padding-bottom: 3rem;
     overflow: hidden;
@@ -259,19 +271,18 @@ const gifts: Gift[] = [
   .pcs-title {
     font-size: clamp(1.5rem, 4vw, 2.4rem);
     font-weight: 700;
-    color: #3d0c2e;
+    color: #ffffff;
     margin-bottom: 0.4rem;
   }
   .pcs-subtitle {
-    color: #6b1a40;
+    color: rgba(255,255,255,0.8);
     font-size: 1rem;
     margin-bottom: 0.3rem;
   }
   .pcs-hint {
-    color: #6b1a40;
+    color: rgba(255,255,255,0.65);
     font-size: 0.85rem;
     letter-spacing: 0.05em;
-    opacity: 0.8;
   }
 
   /* ══ Pool estrecho centrado ══ */
@@ -285,11 +296,10 @@ const gifts: Gift[] = [
     width: min(420px, 92vw);
     height: 680px;
     overflow: hidden;
-    /* Borde cartoon que simula la caja contenedora */
-    border: 4px solid #3d0c2e;
+    border: 3px solid rgba(255,255,255,0.5);
     border-top: none;
-    border-radius: 0 0 16px 16px;
-    background: #ffccd8;
+    border-radius: 0;
+    background: rgba(255,255,255,0.12);
     cursor: default;
   }
 
@@ -307,6 +317,12 @@ const gifts: Gift[] = [
     top: 0; left: 0;
     will-change: transform;
     pointer-events: none;   /* el pool recibe los eventos del mouse */
+  }
+
+  /* Hover: ilumina la caja entera */
+  .pcs-box.hovered {
+    filter: drop-shadow(0 0 14px rgba(255,255,255,0.9)) brightness(1.2);
+    z-index: 10;
   }
 
   /* Indicador de caja ya revelada */
@@ -462,19 +478,19 @@ const gifts: Gift[] = [
   .pcs-overlay.visible { opacity: 1; pointer-events: all; }
 
   .pcs-card {
-    background: #fff0f5;
-    border: 3px solid #3d0c2e;
-    border-radius: 1.5rem;
+    background: #ffffff;
+    border: none;
+    border-radius: 0;
     padding: 2.5rem 3rem;
     text-align: center;
     max-width: 360px;
     width: 90%;
-    box-shadow: 0 8px 0 #3d0c2e, 0 12px 30px rgba(0,0,0,0.3);
-    transform: scale(0.8) rotate(-2deg);
+    box-shadow: 0 12px 40px rgba(0,0,0,0.2);
+    transform: scale(0.85);
     transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
   }
   .pcs-overlay.visible .pcs-card {
-    transform: scale(1) rotate(0deg);
+    transform: scale(1);
   }
 
   .pcs-card-emoji {
@@ -491,29 +507,27 @@ const gifts: Gift[] = [
   .pcs-card-title {
     font-size: 1.4rem;
     font-weight: 700;
-    color: #3d0c2e;
+    color: #ff85a1;
     margin-bottom: 0.6rem;
   }
   .pcs-card-desc {
-    color: #6b1a40;
+    color: #555;
     font-size: 0.95rem;
     line-height: 1.6;
     margin-bottom: 1.6rem;
   }
   .pcs-card-close {
     background: #ff85a1;
-    color: #3d0c2e;
-    border: 2.5px solid #3d0c2e;
-    border-radius: 2rem;
+    color: #ffffff;
+    border: none;
+    border-radius: 0;
     padding: 0.6rem 2rem;
     font-size: 0.9rem;
     font-weight: 700;
     cursor: pointer;
-    box-shadow: 0 4px 0 #3d0c2e;
-    transition: transform 0.1s, box-shadow 0.1s;
+    transition: background 0.15s;
   }
-  .pcs-card-close:active {
-    transform: translateY(3px);
-    box-shadow: 0 1px 0 #3d0c2e;
+  .pcs-card-close:hover {
+    background: #ff6b8e;
   }
 </style>
