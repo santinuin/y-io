@@ -2,9 +2,21 @@
 import Layout from "../layouts/Layout.astro";
 import Hero from "../components/Hero.astro";
 import ProductCategoriesSection from "../components/ProductCategoriesSection.astro";
+import Stickers from "../components/Stickers.astro";
 ---
 
 <Layout>
-  <Hero />
-  <ProductCategoriesSection />
+  <Stickers />
+  <div class="content-layer">
+    <Hero />
+    <ProductCategoriesSection />
+  </div>
 </Layout>
+
+<style>
+  /* Contenido encima de los stickers fijos */
+  .content-layer {
+    position: relative;
+    z-index: 2;
+  }
+</style>

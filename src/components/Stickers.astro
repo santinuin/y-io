@@ -1,0 +1,95 @@
+---
+/**
+ * Stickers — imágenes decorativas fijas que simulan
+ * pegatinas pegadas a la pared, visibles mientras se hace scroll.
+ *
+ * Están en position:fixed con z-index:1.
+ * El contenido principal tiene z-index:2 para quedar encima.
+ */
+
+interface Sticker {
+  src:    string;
+  size:   number;  // px
+  rotate: number;  // grados
+  top?:   string;
+  bottom?: string;
+  left?:  string;
+  right?: string;
+}
+
+const stickers: Sticker[] = [
+  // — Columna izquierda —
+  { src: "/stickers/mollo.webp",      size: 88,  rotate: -12, top: "6vh",   left: "-14px"  },
+  { src: "/stickers/nara.webp",       size: 100, rotate: 8,   top: "28vh",  left: "-10px"  },
+  { src: "/stickers/coqui3.webp",     size: 80,  rotate: -7,  top: "55vh",  left: "-16px"  },
+  { src: "/stickers/nara2.webp",      size: 92,  rotate: 14,  top: "78vh",  left: "-8px"   },
+
+  // — Columna derecha —
+  { src: "/stickers/coqui.webp",      size: 84,  rotate: 10,  top: "4vh",   right: "-12px" },
+  { src: "/stickers/coqui2.webp",     size: 96,  rotate: -9,  top: "35vh",  right: "-16px" },
+  { src: "/stickers/coquimollo.webp", size: 108, rotate: 5,   top: "62vh",  right: "-10px" },
+  { src: "/stickers/nara3.webp",      size: 82,  rotate: -15, top: "85vh",  right: "-8px"  },
+];
+---
+
+<div class="stickers-layer" aria-hidden="true">
+  {stickers.map((s) => {
+    const style = [
+      s.top    && `top: ${s.top}`,
+      s.bottom && `bottom: ${s.bottom}`,
+      s.left   && `left: ${s.left}`,
+      s.right  && `right: ${s.right}`,
+      `--size: ${s.size}px`,
+      `--rot: ${s.rotate}deg`,
+    ].filter(Boolean).join("; ");
+
+    return (
+      <img
+        class="sticker"
+        src={s.src}
+        alt=""
+        width={s.size}
+        height={s.size}
+        style={style}
+        loading="lazy"
+        draggable="false"
+      />
+    );
+  })}
+</div>
+
+<style>
+  .stickers-layer {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 1;
+    overflow: hidden;
+  }
+
+  .sticker {
+    position: absolute;
+    width: var(--size);
+    height: var(--size);
+    object-fit: contain;
+    transform: rotate(var(--rot));
+    /* Sombra suave para el efecto "pegado" */
+    filter: drop-shadow(2px 3px 6px rgba(0, 0, 0, 0.18));
+    /* Pequeña transición al cargar */
+    animation: sticker-drop 0.4s cubic-bezier(0.34, 1.4, 0.64, 1) both;
+    animation-delay: calc(var(--i, 0) * 60ms);
+  }
+
+  @keyframes sticker-drop {
+    from { opacity: 0; transform: rotate(var(--rot)) scale(0.6); }
+    to   { opacity: 1; transform: rotate(var(--rot)) scale(1);   }
+  }
+
+  /* En pantallas pequeñas los stickers se reducen para no tapar contenido */
+  @media (max-width: 600px) {
+    .sticker {
+      width:  calc(var(--size) * 0.65);
+      height: calc(var(--size) * 0.65);
+    }
+  }
+</style>
