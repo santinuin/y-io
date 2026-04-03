@@ -4,9 +4,10 @@ interface Gift {
   label:       string;
   emoji:       string;
   desc:        string;
-  boxColor:    string;  // color del cuerpo de la caja
-  lidColor:    string;  // color de la tapa (un tono más oscuro)
-  ribbonColor: string;  // color del moño y la cinta
+  boxColor:    string;
+  lidColor:    string;
+  ribbonColor: string;
+  video?:      string;  // ruta relativa a /public, ej: /videos/viaje.mp4
 }
 
 const gifts: Gift[] = [
@@ -16,14 +17,14 @@ const gifts: Gift[] = [
   { id: "cena",      label: "Cena",               emoji: "🍷", desc: "Comer como unos gorditos en papagaio",                  boxColor: "#EF5350", lidColor: "#E53935", ribbonColor: "#FFEE58" },
   { id: "spa",       label: "Masajitos",          emoji: "💆", desc: "Masajitos en los pies",                                 boxColor: "#AB47BC", lidColor: "#8E24AA", ribbonColor: "#80DEEA" },
   { id: "concierto", label: "Concierto",          emoji: "🎶", desc: "Entradas para ver a Ricky Martin",                      boxColor: "#26C6DA", lidColor: "#00ACC1", ribbonColor: "#FF8A65" },
-  { id: "cab",       label: "CAB",                emoji: "🏴‍☠️", desc: "Abono pa ver al pirata",                                boxColor: "#FFEE58", lidColor: "#FDD835", ribbonColor: "#7E57C2" }
+  { id: "cab",       label: "CAB",                emoji: "🏴‍☠️", desc: "Abono pa ver al pirata",                                boxColor: "#FFEE58", lidColor: "#FDD835", ribbonColor: "#7E57C2" },
 ];
 ---
 
 <section class="pcs" id="pcs">
 
   <div class="pcs-header">
-    <h2 class="pcs-title">Como soy indeciso y ansioso</h2>
+    <h2 class="pcs-title">Peeeeeeeeeeeeeeeeeeeeeeeeero <br> como soy indeciso y ansioso...</h2>
     <p class="pcs-subtitle">Te hago una listita de los posibles regalos que tenía en mente pa tu inminitente cumpleañito'</p>
     <p class="pcs-hint">¡Clickea las cajitas para ver qué tienen adentro!</p>
   </div>
@@ -70,8 +71,27 @@ const gifts: Gift[] = [
       <div class="pcs-card-emoji"  id="pcs-card-emoji">🎁</div>
       <h3  class="pcs-card-title"  id="pcs-card-title">Regalo</h3>
       <p   class="pcs-card-desc"   id="pcs-card-desc">¡Una sorpresa especial para vos!</p>
-      <button class="pcs-card-close" id="pcs-card-close">Cerrar ✕</button>
+      <div class="pcs-card-actions">
+        <button class="pcs-card-choose" id="pcs-card-choose">Elegir 🎁</button>
+        <button class="pcs-card-close"  id="pcs-card-close">Volver ✕</button>
+      </div>
     </div>
+  </div>
+
+  <!-- Audio independiente del video. Ponés el archivo en /public/audio/ y completás el src -->
+  <audio id="pcs-audio" loop src="/audio/chamame.mp3"></audio>
+
+  <!-- Overlay de video (encima de todo) -->
+  <div class="pcs-video-overlay" id="pcs-video-overlay" aria-hidden="true">
+    <canvas id="pcs-fireworks" class="pcs-fireworks"></canvas>
+    <video
+      id="pcs-video"
+      autoplay
+      loop
+      playsinline
+      class="pcs-video"
+    ></video>
+    <button class="pcs-video-close" id="pcs-video-close" aria-label="Cerrar video">✕</button>
   </div>
 
 </section>
@@ -81,26 +101,160 @@ const gifts: Gift[] = [
   const { Engine, Runner, Bodies, Events, Composite, Mouse, MouseConstraint, Query, Body } = Matter;
 
   /* ── DOM ── */
-  const section   = document.getElementById("pcs")!;
-  const pool      = document.getElementById("pcs-pool")!;
-  const list      = document.getElementById("pcs-list")!;
-  const overlay   = document.getElementById("pcs-overlay")!;
-  const cardEmoji = document.getElementById("pcs-card-emoji")!;
-  const cardTitle = document.getElementById("pcs-card-title")!;
-  const cardDesc  = document.getElementById("pcs-card-desc")!;
-  const closeBtn  = document.getElementById("pcs-card-close")!;
-  const boxEls    = Array.from(list.querySelectorAll<HTMLElement>(".pcs-box"));
+  const section      = document.getElementById("pcs")!;
+  const pool         = document.getElementById("pcs-pool")!;
+  const list         = document.getElementById("pcs-list")!;
+  const overlay      = document.getElementById("pcs-overlay")!;
+  const cardEmoji    = document.getElementById("pcs-card-emoji")!;
+  const cardTitle    = document.getElementById("pcs-card-title")!;
+  const cardDesc     = document.getElementById("pcs-card-desc")!;
+  const closeBtn     = document.getElementById("pcs-card-close")!;
+  const chooseBtn    = document.getElementById("pcs-card-choose")!;
+  const videoOverlay = document.getElementById("pcs-video-overlay")!;
+  const videoEl      = document.getElementById("pcs-video") as HTMLVideoElement;
+  const videoClose   = document.getElementById("pcs-video-close")!;
+  const audioEl      = document.getElementById("pcs-audio") as HTMLAudioElement;
+  const fwCanvas     = document.getElementById("pcs-fireworks") as HTMLCanvasElement;
+  const fwCtx        = fwCanvas.getContext("2d")!;
+
+  /* ══════════════════════════════════════════
+     FUEGOS ARTIFICIALES
+  ══════════════════════════════════════════ */
+  let fwRaf = 0;
+
+  interface Particle {
+    x: number; y: number;
+    vx: number; vy: number;
+    alpha: number; decay: number;
+    radius: number; color: string;
+  }
+
+  interface Rocket {
+    x: number; y: number;
+    vy: number; targetY: number;
+    color: string; exploded: boolean;
+    particles: Particle[];
+  }
+
+  const COLORS = [
+    "#ff85a1", "#ffee58", "#ffffff", "#80deea",
+    "#ff6b8e", "#ce93d8", "#a5d6a7", "#ffb74d",
+  ];
+
+  const rockets: Rocket[] = [];
+
+  function randomColor() {
+    return COLORS[Math.floor(Math.random() * COLORS.length)];
+  }
+
+  function launchRocket() {
+    const x = fwCanvas.width * (0.15 + Math.random() * 0.7);
+    rockets.push({
+      x, y: fwCanvas.height,
+      vy: -(10 + Math.random() * 6),
+      targetY: fwCanvas.height * (0.15 + Math.random() * 0.45),
+      color: randomColor(),
+      exploded: false,
+      particles: [],
+    });
+  }
+
+  function explode(r: Rocket) {
+    r.exploded = true;
+    const count = 80 + Math.floor(Math.random() * 60);
+    for (let i = 0; i < count; i++) {
+      const angle = (Math.PI * 2 * i) / count + (Math.random() - 0.5) * 0.3;
+      const speed = 1.5 + Math.random() * 4;
+      r.particles.push({
+        x: r.x, y: r.y,
+        vx: Math.cos(angle) * speed,
+        vy: Math.sin(angle) * speed,
+        alpha: 1,
+        decay: 0.012 + Math.random() * 0.01,
+        radius: 2 + Math.random() * 2,
+        color: r.color,
+      });
+    }
+  }
+
+  function fireworksFrame() {
+    fwCtx.fillStyle = "rgba(0,0,0,0.18)";
+    fwCtx.fillRect(0, 0, fwCanvas.width, fwCanvas.height);
+
+    // Lanzar cohete cada ~40 frames
+    if (Math.random() < 0.025) launchRocket();
+
+    for (let i = rockets.length - 1; i >= 0; i--) {
+      const r = rockets[i];
+
+      if (!r.exploded) {
+        r.y += r.vy;
+        // Estela del cohete
+        fwCtx.beginPath();
+        fwCtx.arc(r.x, r.y, 3, 0, Math.PI * 2);
+        fwCtx.fillStyle = r.color;
+        fwCtx.fill();
+
+        if (r.y <= r.targetY) explode(r);
+      }
+
+      // Partículas
+      for (let j = r.particles.length - 1; j >= 0; j--) {
+        const p = r.particles[j];
+        p.x  += p.vx;
+        p.y  += p.vy;
+        p.vy += 0.08; // gravedad
+        p.vx *= 0.98;
+        p.alpha -= p.decay;
+
+        if (p.alpha <= 0) { r.particles.splice(j, 1); continue; }
+
+        fwCtx.globalAlpha = p.alpha;
+        fwCtx.beginPath();
+        fwCtx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+        fwCtx.fillStyle = p.color;
+        fwCtx.fill();
+      }
+      fwCtx.globalAlpha = 1;
+
+      if (r.exploded && r.particles.length === 0) rockets.splice(i, 1);
+    }
+
+    fwRaf = requestAnimationFrame(fireworksFrame);
+  }
+
+  function startFireworks() {
+    fwCanvas.width  = window.innerWidth;
+    fwCanvas.height = window.innerHeight;
+    rockets.length  = 0;
+    fwCtx.clearRect(0, 0, fwCanvas.width, fwCanvas.height);
+    // Lanzar algunos cohetes iniciales de golpe
+    for (let i = 0; i < 4; i++) launchRocket();
+    fwRaf = requestAnimationFrame(fireworksFrame);
+  }
+
+  function stopFireworks() {
+    cancelAnimationFrame(fwRaf);
+    fwCtx.clearRect(0, 0, fwCanvas.width, fwCanvas.height);
+    rockets.length = 0;
+  }
+
+  // ── Cuando tengas el archivo, cambiá esta constante ──
+  const GIFT_AUDIO = "/audio/chamame.mp3"; // ej: "/audio/cancion.mp3"
+  const boxEls       = Array.from(list.querySelectorAll<HTMLElement>(".pcs-box"));
 
   /* ── Datos (espejo del frontmatter) ── */
   const GIFTS = [
-    { id: "viaje",     label: "Viajecito",          emoji: "✈️", desc: "Escapada en vacaciones de invierno a lugar a definir" },
-    { id: "tablet",    label: "Tablet",             emoji: "📱", desc: "Chiche para mirar tus series de noche" },
-    { id: "ebook",     label: "Ebook",              emoji: "📚", desc: "Pa que nunca te quedes sin leer" },
-    { id: "cena",      label: "Cena",               emoji: "🍷", desc: "Comer como unos gorditos en papagaio" },
-    { id: "spa",       label: "Masajitos",          emoji: "💆", desc: "Masajitos en los pies" },
-    { id: "concierto", label: "Concierto",          emoji: "🎶", desc: "Entradas para ver a Ricky Martin" },
-    { id: "cab",       label: "CAB",                emoji: "🏴‍☠️", desc: "Abono pa ver al pirata" }
+    { id: "viaje",     label: "Viajecito",  emoji: "✈️", desc: "Escapada en vacaciones de invierno a lugar a definir" },
+    { id: "tablet",    label: "Tablet",     emoji: "📱", desc: "Chiche para mirar tus series de noche"                },
+    { id: "ebook",     label: "Ebook",      emoji: "📚", desc: "Pa que nunca te quedes sin leer"                      },
+    { id: "cena",      label: "Cena",       emoji: "🍷", desc: "Comer como unos gorditos en papagaio"                 },
+    { id: "spa",       label: "Masajitos",  emoji: "💆", desc: "Masajitos en los pies"                                },
+    { id: "concierto", label: "Concierto",  emoji: "🎶", desc: "Entradas para ver a Ricky Martin"                    },
+    { id: "cab",       label: "CAB",        emoji: "🏴‍☠️", desc: "Abono pa ver al pirata"                              },
   ];
+
+  const GIFT_VIDEO = "/videos/coqui-baile.mp4";
 
   /* Dimensiones de la caja — deben coincidir con el CSS */
   const BOX_W = 120;
@@ -218,9 +372,12 @@ const gifts: Gift[] = [
   }
 
   /* ══════════════════════════════════════════
-     OVERLAY
+     OVERLAY REGALO
   ══════════════════════════════════════════ */
+  let activeGiftIdx = -1;
+
   function showGift(idx: number) {
+    activeGiftIdx = idx;
     const g = GIFTS[idx];
     cardEmoji.textContent = g.emoji;
     cardTitle.textContent = g.label;
@@ -228,9 +385,53 @@ const gifts: Gift[] = [
     overlay.classList.add("visible");
     overlay.setAttribute("aria-hidden", "false");
   }
+
+  function closeOverlay() {
+    overlay.classList.remove("visible");
+    overlay.setAttribute("aria-hidden", "true");
+    activeGiftIdx = -1;
+  }
+
   closeBtn.addEventListener("click", closeOverlay);
   overlay.addEventListener("click", (e) => { if (e.target === overlay) closeOverlay(); });
-  function closeOverlay() { overlay.classList.remove("visible"); overlay.setAttribute("aria-hidden", "true"); }
+
+  /* ══════════════════════════════════════════
+     OVERLAY VIDEO
+  ══════════════════════════════════════════ */
+  function showVideo(src: string) {
+    videoEl.src = src;
+    videoEl.load();
+    videoEl.play().catch(() => {});
+
+    if (GIFT_AUDIO) {
+      audioEl.src = GIFT_AUDIO;
+      audioEl.load();
+      audioEl.play().catch(() => {});
+    }
+
+    videoOverlay.classList.add("visible");
+    videoOverlay.setAttribute("aria-hidden", "false");
+    document.body.style.overflow = "hidden";
+    startFireworks();
+  }
+
+  function closeVideo() {
+    videoOverlay.classList.remove("visible");
+    videoOverlay.setAttribute("aria-hidden", "true");
+    videoEl.pause();
+    videoEl.src = "";
+    audioEl.pause();
+    audioEl.src = "";
+    document.body.style.overflow = "";
+    stopFireworks();
+  }
+
+  chooseBtn.addEventListener("click", () => {
+    showVideo(GIFT_VIDEO);
+  });
+
+  videoClose.addEventListener("click", closeVideo);
+  videoOverlay.addEventListener("click", (e) => { if (e.target === videoOverlay) closeVideo(); });
 
   /* ══════════════════════════════════════════
      INTERSECTION OBSERVER
@@ -509,18 +710,103 @@ const gifts: Gift[] = [
     line-height: 1.6;
     margin-bottom: 1.6rem;
   }
-  .pcs-card-close {
-    background: #ff85a1;
-    color: #ffffff;
-    border: none;
-    border-radius: 0;
-    padding: 0.6rem 2rem;
-    font-size: 0.9rem;
+  .pcs-card-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    align-items: center;
+  }
+
+  .pcs-card-choose {
+    background: white;
+    color: var(--color-surface, #ff6b8e);
+    border: 2px solid rgba(255, 107, 142, 0.3);
+    border-radius: 2rem;
+    padding: 0.65rem 2rem;
+    font-family: var(--font-display);
+    font-size: 1rem;
     font-weight: 700;
     cursor: pointer;
-    transition: background 0.15s;
+    width: 100%;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+  }
+  .pcs-card-choose:hover {
+    transform: scale(1.04);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+  }
+
+  .pcs-card-close {
+    background: transparent;
+    color: var(--color-surface, #ff6b8e);
+    border: 2px solid var(--color-surface, #ff6b8e);
+    border-radius: 2rem;
+    padding: 0.55rem 2rem;
+    font-family: var(--font-display);
+    font-size: 0.95rem;
+    font-weight: 700;
+    cursor: pointer;
+    width: 100%;
+    transition: background 0.15s ease, color 0.15s ease;
   }
   .pcs-card-close:hover {
-    background: #ff6b8e;
+    background: var(--color-surface, #ff6b8e);
+    color: #ffffff;
   }
+
+  /* ══ Video overlay ══ */
+  .pcs-video-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    background: rgba(0, 0, 0, 0.92);
+    align-items: center;
+    justify-content: center;
+  }
+  .pcs-video-overlay.visible {
+    display: flex;
+    animation: overlayFadeIn 0.3s ease forwards;
+  }
+  @keyframes overlayFadeIn {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+  }
+
+  .pcs-fireworks {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .pcs-video {
+    position: relative;
+    z-index: 1;
+    max-width: min(90vw, 900px);
+    max-height: 85vh;
+    border-radius: 0.75rem;
+    box-shadow: 0 8px 60px rgba(0, 0, 0, 0.6);
+  }
+
+  .pcs-video-close {
+    position: absolute;
+    top: 1.25rem;
+    right: 1.25rem;
+    z-index: 2;
+    background: rgba(255, 255, 255, 0.15);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 2.5rem;
+    height: 2.5rem;
+    font-size: 1.1rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.15s;
+  }
+  .pcs-video-close:hover { background: rgba(255, 255, 255, 0.3); }
 </style>

@@ -3,35 +3,44 @@
 // Como son position:fixed, siempre decoran el fondo independientemente del scroll.
 // El contenido tiene z-index:2 → siempre encima de los stickers.
 
+// nombre completo del archivo (con extensión)
 const imgs = [
-  "mollo", "coqui", "nara", "coqui2",
-  "coqui3", "coquimollo", "nara2", "nara3",
+  "mollo.webp", "coqui.webp", "nara.webp",     "coqui2.webp",
+  "coqui3.webp", "coquimollo.webp", "nara2.webp", "nara3.webp",
+  "corazon.png", "belgrano.webp",  // índices 8 y 9
 ];
 
+// Distribuidos en una cuadrícula 5×4 de ~20vw × 25vh por celda.
+// Dentro de cada celda, posición ligeramente aleatoria pero controlada
+// para que nunca queden dos stickers muy juntos.
 const stickers = [
-  // ── Fila superior ──────────────────────────────────────────────
-  { img: 0, size: 130, rotate: -14, top:  "4vh",  left:  "3vw"  },
-  { img: 4, size: 115, rotate:  18, top:  "2vh",  left: "28vw"  },
-  { img: 2, size: 140, rotate:  -6, top:  "5vh",  left: "52vw"  },
-  { img: 6, size: 118, rotate:  20, top:  "3vh",  left: "78vw"  },
+  // ── Fila 1 (top ~2–10vh) ─────────────────────────────────────
+  { img: 0, size: 125, rotate: -14, top:  "3vh",  left:  "1vw"  },
+  { img: 8, size: 108, rotate:  10, top:  "6vh",  left: "21vw"  }, // corazon
+  { img: 4, size: 118, rotate: -18, top:  "2vh",  left: "42vw"  },
+  { img: 2, size: 132, rotate:   7, top:  "5vh",  left: "63vw"  },
+  { img: 6, size: 115, rotate:  20, top:  "3vh",  left: "84vw"  },
 
-  // ── Fila media-alta ─────────────────────────────────────────────
-  { img: 1, size: 125, rotate: -20, top: "30vh",  left:  "1vw"  },
-  { img: 5, size: 138, rotate:  11, top: "25vh",  left: "35vw"  },
-  { img: 3, size: 122, rotate: -9,  top: "28vh",  left: "68vw"  },
-  { img: 7, size: 132, rotate:  16, top: "32vh",  left: "90vw"  },
+  // ── Fila 2 (top ~27–35vh) ────────────────────────────────────
+  { img: 1, size: 120, rotate: -22, top: "29vh",  left:  "8vw"  },
+  { img: 5, size: 135, rotate:  13, top: "27vh",  left: "30vw"  },
+  { img: 9, size: 122, rotate:  -6, top: "31vh",  left: "54vw"  }, // belgrano
+  { img: 3, size: 118, rotate: -11, top: "28vh",  left: "74vw"  },
+  { img: 7, size: 128, rotate:  17, top: "33vh",  left: "93vw"  },
 
-  // ── Fila media-baja ─────────────────────────────────────────────
-  { img: 2, size: 120, rotate:   8, top: "54vh",  left:  "5vw"  },
-  { img: 6, size: 145, rotate: -17, top: "50vh",  left: "30vw"  },
-  { img: 0, size: 128, rotate:  22, top: "56vh",  left: "62vw"  },
-  { img: 4, size: 115, rotate:  -7, top: "52vh",  left: "87vw"  },
+  // ── Fila 3 (top ~52–60vh) ────────────────────────────────────
+  { img: 2, size: 118, rotate:   9, top: "54vh",  left:  "2vw"  },
+  { img: 6, size: 140, rotate: -16, top: "52vh",  left: "23vw"  },
+  { img: 8, size: 104, rotate:  12, top: "58vh",  left: "45vw"  }, // corazon
+  { img: 0, size: 126, rotate:  21, top: "53vh",  left: "67vw"  },
+  { img: 4, size: 112, rotate:  -8, top: "56vh",  left: "88vw"  },
 
-  // ── Fila inferior ───────────────────────────────────────────────
-  { img: 3, size: 135, rotate: -12, top: "78vh",  left:  "2vw"  },
-  { img: 7, size: 122, rotate:  15, top: "75vh",  left: "32vw"  },
-  { img: 5, size: 140, rotate:  -4, top: "80vh",  left: "60vw"  },
-  { img: 1, size: 118, rotate:  19, top: "76vh",  left: "84vw"  },
+  // ── Fila 4 (top ~76–84vh) ────────────────────────────────────
+  { img: 3, size: 130, rotate: -13, top: "78vh",  left:  "5vw"  },
+  { img: 7, size: 120, rotate:  14, top: "76vh",  left: "26vw"  },
+  { img: 9, size: 116, rotate:   5, top: "80vh",  left: "50vw"  }, // belgrano
+  { img: 5, size: 138, rotate:  -5, top: "77vh",  left: "71vw"  },
+  { img: 1, size: 115, rotate:  18, top: "79vh",  left: "91vw"  },
 ];
 ---
 
@@ -39,7 +48,7 @@ const stickers = [
   {stickers.map((s, i) => (
     <img
       class="sticker"
-      src={`/stickers/${imgs[s.img]}.webp`}
+      src={`/stickers/${imgs[s.img]}`}
       alt=""
       width={s.size}
       height={s.size}
