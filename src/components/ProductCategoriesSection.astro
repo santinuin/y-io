@@ -317,6 +317,19 @@ const gifts: Gift[] = [
       constraint: { stiffness: 0.15, damping: 0.1, render: { visible: false } },
     }));
 
+    /* En mobile, permitir scroll cuando el dedo cae en área vacía.
+       La fase de captura dispara ANTES que los listeners de Matter.js (bubble),
+       así que stopImmediatePropagation evita que Matter.js llame preventDefault
+       y bloquee el scroll del navegador. */
+    pool.addEventListener("touchstart", (e: TouchEvent) => {
+      const rect  = pool.getBoundingClientRect();
+      const touch = e.touches[0];
+      const point = { x: touch.clientX - rect.left, y: touch.clientY - rect.top };
+      if (Query.point(bodies, point).length === 0) {
+        e.stopImmediatePropagation();
+      }
+    }, { capture: true, passive: true });
+
     /* Clic vs drag */
     let downX = 0, downY = 0, dragging = false;
     pool.addEventListener("pointerdown", (e: PointerEvent) => { downX = e.clientX; downY = e.clientY; dragging = false; });
