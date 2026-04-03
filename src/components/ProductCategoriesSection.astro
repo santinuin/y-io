@@ -1,67 +1,77 @@
 ---
-/**
- * ProductCategoriesSection — ball pool con física real (Matter.js).
- *
- * Las "bolas" son elementos DOM (<li>) cuyas posiciones se actualizan
- * frame a frame desde el motor de física. NO hay canvas visible.
- * El MouseConstraint de Matter.js permite arrastrar las bolas.
- * Un clic sin arrastre abre el overlay del regalo.
- */
-
 interface Gift {
-  id:    string;
-  label: string;
-  emoji: string;
-  desc:  string;
-  hue:   number; // HSL hue para el color de la bola
+  id:          string;
+  label:       string;
+  emoji:       string;
+  desc:        string;
+  boxColor:    string;  // color del cuerpo de la caja
+  lidColor:    string;  // color de la tapa (un tono más oscuro)
+  ribbonColor: string;  // color del moño y la cinta
 }
 
 const gifts: Gift[] = [
-  { id: "cena",     label: "Cena romántica",          emoji: "🍷", desc: "Una noche especial solo para los dos.",           hue: 270 },
-  { id: "escapada", label: "Escapada de fin de semana", emoji: "✈️", desc: "Un destino sorpresa, solo vos y yo.",            hue: 290 },
-  { id: "spa",      label: "Spa day",                  emoji: "💆", desc: "Un día de descanso y mimos que te merecés.",     hue: 250 },
-  { id: "concierto",label: "Concierto sorpresa",       emoji: "🎶", desc: "Tu artista favorito, juntos en vivo.",           hue: 310 },
-  { id: "picnic",   label: "Picnic bajo las estrellas",emoji: "🌙", desc: "Una noche mágica al aire libre.",                hue: 240 },
-  { id: "pelis",    label: "Día de películas",         emoji: "🎬", desc: "Pijamas, pochoclo y maratón de tus favoritas.", hue: 280 },
-  { id: "masaje",   label: "Masaje",                   emoji: "💆‍♀️", desc: "Una hora de relajación total.",                hue: 260 },
-  { id: "desayuno", label: "Desayuno en cama",         emoji: "☕", desc: "Empezar el día con mimo y café.",               hue: 300 },
-  { id: "sorpresa", label: "Sorpresa especial",        emoji: "🎁", desc: "Esto es solo el comienzo...",                   hue: 320 },
+  { id: "viaje",     label: "Viajecito",         emoji: "✈️", desc: "Escapada en vacaciones de invierno a lugar a definir",  boxColor: "#FFA726", lidColor: "#FB8C00", ribbonColor: "#F06292" },
+  { id: "tablet",    label: "Tablet",             emoji: "📱", desc: "Un chiche para mirar tus series de noche",             boxColor: "#42A5F5", lidColor: "#1E88E5", ribbonColor: "#FFEE58" },
+  { id: "ebook",     label: "Ebook",              emoji: "📚", desc: "Pa que nunca te quedes sin leer",                      boxColor: "#66BB6A", lidColor: "#43A047", ribbonColor: "#EF5350" },
+  { id: "cena",      label: "Cena romántica",     emoji: "🍷", desc: "Una noche especial solo para los dos",                 boxColor: "#EF5350", lidColor: "#E53935", ribbonColor: "#FFEE58" },
+  { id: "spa",       label: "Spa day",            emoji: "💆", desc: "Un día de descanso y mimos que te merecés",            boxColor: "#AB47BC", lidColor: "#8E24AA", ribbonColor: "#80DEEA" },
+  { id: "concierto", label: "Concierto sorpresa", emoji: "🎶", desc: "Tu artista favorito, juntos en vivo",                  boxColor: "#26C6DA", lidColor: "#00ACC1", ribbonColor: "#FF8A65" },
+  { id: "picnic",    label: "Picnic nocturno",    emoji: "🌙", desc: "Una noche mágica al aire libre",                      boxColor: "#FFEE58", lidColor: "#FDD835", ribbonColor: "#7E57C2" },
+  { id: "pelis",     label: "Día de películas",   emoji: "🎬", desc: "Pijamas, pochoclo y maratón de tus favoritas",        boxColor: "#FF7043", lidColor: "#F4511E", ribbonColor: "#B2DFDB" },
+  { id: "sorpresa",  label: "Sorpresa especial",  emoji: "🎁", desc: "Esto es solo el comienzo...",                         boxColor: "#EC407A", lidColor: "#D81B60", ribbonColor: "#FFFFFF" },
 ];
 ---
 
 <section class="pcs" id="pcs">
 
-  <!-- Encabezado -->
   <div class="pcs-header">
-    <h2 class="pcs-title">Tus regalos te esperan</h2>
-    <p class="pcs-subtitle">Arrastrá o tocá una bola para descubrir tu sorpresa</p>
+    <h2 class="pcs-title">Como soy indeciso y ansioso</h2>
+    <p class="pcs-subtitle">Te hago una listita de los posibles regalos que tenía en mente</p>
+    <p class="pcs-hint">¡Hacé clic en una caja para ver qué hay adentro!</p>
   </div>
 
-  <!-- Pool de bolas -->
-  <div class="pcs-pool" id="pcs-pool">
-    <ul class="pcs-list" id="pcs-list">
-      {gifts.map((g, i) => (
-        <li
-          class="pcs-ball"
-          id={`ball-${g.id}`}
-          data-index={i}
-          style={`--hue: ${g.hue};`}
-        >
-          <div class="pcs-ball-inner">
-            <span class="pcs-emoji" aria-hidden="true">{g.emoji}</span>
-            <span class="pcs-label">{g.label}</span>
-          </div>
-        </li>
-      ))}
-    </ul>
+  <!-- Contenedor estrecho: las cajas caen unas sobre otras -->
+  <div class="pcs-pool-wrap">
+    <div class="pcs-pool" id="pcs-pool">
+      <ul class="pcs-list" id="pcs-list">
+        {gifts.map((g, i) => (
+          <li
+            class="pcs-box"
+            id={`box-${g.id}`}
+            data-index={i}
+            style={`--bc: ${g.boxColor}; --lc: ${g.lidColor}; --rc: ${g.ribbonColor};`}
+          >
+            <!-- Caja de regalo en CSS -->
+            <div class="gb">
+              <!-- Moño -->
+              <div class="gb-bow-wrap">
+                <div class="gb-bow-l"></div>
+                <div class="gb-bow-r"></div>
+                <div class="gb-bow-knot"></div>
+                <!-- Cinta vertical sobre el moño -->
+                <div class="gb-bow-ribbon"></div>
+              </div>
+              <!-- Tapa -->
+              <div class="gb-lid">
+                <div class="gb-lid-ribbon"></div>
+              </div>
+              <!-- Cuerpo -->
+              <div class="gb-body">
+                <!-- Las cintas horizontales y vertical se dibujan con pseudo-elementos -->
+              </div>
+            </div>
+          </li>
+        ))}
+      </ul>
+    </div>
   </div>
 
-  <!-- Overlay de regalo -->
+  <!-- Overlay: se muestra al hacer clic en una caja -->
   <div class="pcs-overlay" id="pcs-overlay" aria-hidden="true">
     <div class="pcs-card">
-      <div class="pcs-card-emoji" id="pcs-card-emoji">🎁</div>
-      <h3  class="pcs-card-title" id="pcs-card-title">Regalo</h3>
-      <p   class="pcs-card-desc"  id="pcs-card-desc">¡Una sorpresa especial para vos!</p>
+      <div class="pcs-card-emoji"  id="pcs-card-emoji">🎁</div>
+      <h3  class="pcs-card-title"  id="pcs-card-title">Regalo</h3>
+      <p   class="pcs-card-desc"   id="pcs-card-desc">¡Una sorpresa especial para vos!</p>
       <button class="pcs-card-close" id="pcs-card-close">Cerrar ✕</button>
     </div>
   </div>
@@ -70,238 +80,217 @@ const gifts: Gift[] = [
 
 <script>
   import Matter from "matter-js";
+  const { Engine, Runner, Bodies, Events, Composite, Mouse, MouseConstraint, Query, Body } = Matter;
 
-  const {
-    Engine, Runner, Bodies, Events,
-    Composite, Mouse, MouseConstraint, Query, Body,
-  } = Matter;
-
-  /* ── Referencias DOM ── */
-  const section  = document.getElementById("pcs")!;
-  const pool     = document.getElementById("pcs-pool")!;
-  const list     = document.getElementById("pcs-list")!;
-  const overlay  = document.getElementById("pcs-overlay")!;
+  /* ── DOM ── */
+  const section   = document.getElementById("pcs")!;
+  const pool      = document.getElementById("pcs-pool")!;
+  const list      = document.getElementById("pcs-list")!;
+  const overlay   = document.getElementById("pcs-overlay")!;
   const cardEmoji = document.getElementById("pcs-card-emoji")!;
   const cardTitle = document.getElementById("pcs-card-title")!;
   const cardDesc  = document.getElementById("pcs-card-desc")!;
   const closeBtn  = document.getElementById("pcs-card-close")!;
-  const ballEls   = Array.from(list.querySelectorAll<HTMLElement>(".pcs-ball"));
+  const boxEls    = Array.from(list.querySelectorAll<HTMLElement>(".pcs-box"));
 
-  /* ── Datos de regalos (espejo del frontmatter) ── */
+  /* ── Datos (espejo del frontmatter) ── */
   const GIFTS = [
-    { id: "cena",      label: "Cena romántica",           emoji: "🍷", desc: "Una noche especial solo para los dos."           },
-    { id: "escapada",  label: "Escapada de fin de semana", emoji: "✈️", desc: "Un destino sorpresa, solo vos y yo."            },
-    { id: "spa",       label: "Spa day",                   emoji: "💆", desc: "Un día de descanso y mimos que te merecés."     },
-    { id: "concierto", label: "Concierto sorpresa",        emoji: "🎶", desc: "Tu artista favorito, juntos en vivo."           },
-    { id: "picnic",    label: "Picnic bajo las estrellas", emoji: "🌙", desc: "Una noche mágica al aire libre."                },
-    { id: "pelis",     label: "Día de películas",          emoji: "🎬", desc: "Pijamas, pochoclo y maratón de tus favoritas." },
-    { id: "masaje",    label: "Masaje",                    emoji: "💆‍♀️", desc: "Una hora de relajación total."                },
-    { id: "desayuno",  label: "Desayuno en cama",          emoji: "☕", desc: "Empezar el día con mimo y café."               },
-    { id: "sorpresa",  label: "Sorpresa especial",         emoji: "🎁", desc: "Esto es solo el comienzo..."                   },
+    { id: "viaje",     label: "Viajecito",         emoji: "✈️", desc: "Escapada en vacaciones de invierno a lugar a definir"  },
+    { id: "tablet",    label: "Tablet",             emoji: "📱", desc: "Un chiche para mirar tus series de noche"             },
+    { id: "ebook",     label: "Ebook",              emoji: "📚", desc: "Pa que nunca te quedes sin leer"                      },
+    { id: "cena",      label: "Cena romántica",     emoji: "🍷", desc: "Una noche especial solo para los dos"                 },
+    { id: "spa",       label: "Spa day",            emoji: "💆", desc: "Un día de descanso y mimos que te merecés"            },
+    { id: "concierto", label: "Concierto sorpresa", emoji: "🎶", desc: "Tu artista favorito, juntos en vivo"                  },
+    { id: "picnic",    label: "Picnic nocturno",    emoji: "🌙", desc: "Una noche mágica al aire libre"                      },
+    { id: "pelis",     label: "Día de películas",   emoji: "🎬", desc: "Pijamas, pochoclo y maratón de tus favoritas"        },
+    { id: "sorpresa",  label: "Sorpresa especial",  emoji: "🎁", desc: "Esto es solo el comienzo..."                         },
   ];
+
+  /* Dimensiones de la caja — deben coincidir con el CSS */
+  const BOX_W = 120;
+  const BOX_H = 105;
 
   let initialized = false;
 
   /* ══════════════════════════════════════════
-     INICIALIZACIÓN DE MATTER.JS
+     FÍSICA
   ══════════════════════════════════════════ */
   function initPhysics() {
     const W = pool.offsetWidth;
     const H = pool.offsetHeight;
 
-    // Radio responsivo: cabe 3 columnas con un poco de margen
-    const R = Math.min(Math.floor(W / 7), 85);
-    const D = R * 2;
-
-    // Aplicar tamaño a los <li>
-    ballEls.forEach((li) => {
-      li.style.width  = `${D}px`;
-      li.style.height = `${D}px`;
+    /* Aplicar tamaño CSS a los <li> */
+    boxEls.forEach((li) => {
+      li.style.width  = `${BOX_W}px`;
+      li.style.height = `${BOX_H}px`;
     });
 
-    /* ── Motor (sin Render) ── */
-    const engine = Engine.create({ gravity: { x: 0, y: 1.3 } });
+    const engine = Engine.create({ gravity: { x: 0, y: 1.4 } });
 
-    /* ── Paredes estáticas ── */
-    const t = 60; // grosor de las paredes
+    /* Paredes */
+    const t = 50;
     Composite.add(engine.world, [
-      Bodies.rectangle(W / 2, H + t / 2, W + t * 2, t, { isStatic: true, label: "wall" }),  // suelo
-      Bodies.rectangle(-t / 2, H / 2, t, H * 2,        { isStatic: true, label: "wall" }),  // izquierda
-      Bodies.rectangle(W + t / 2, H / 2, t, H * 2,     { isStatic: true, label: "wall" }),  // derecha
+      Bodies.rectangle(W / 2, H + t / 2, W + t * 2, t, { isStatic: true, label: "wall" }),
+      Bodies.rectangle(-t / 2,   H / 2,  t, H * 2,  { isStatic: true, label: "wall" }),
+      Bodies.rectangle(W + t / 2, H / 2, t, H * 2,  { isStatic: true, label: "wall" }),
     ]);
 
-    /* ── Cuerpos circulares — caen desde arriba en columnas ── */
-    const cols   = 3;
-    const colW   = W / cols;
+    /* Cajas rectangulares — caen desde arriba, centradas en el pool estrecho */
     const bodies = GIFTS.map((_, i) => {
-      const col  = i % cols;
-      const row  = Math.floor(i / cols);
-      const x    = colW * col + colW / 2 + (Math.random() - 0.5) * colW * 0.3;
-      const y    = -R - row * (D + 30) - Math.random() * 40;
-      return Bodies.circle(x, y, R, {
-        restitution: 0.25,
-        friction:    0.6,
-        frictionAir: 0.015,
+      // Con pool estrecho, casi 1 columna — dispersión horizontal pequeña
+      const x = W / 2 + (Math.random() - 0.5) * (W * 0.45);
+      const y = -BOX_H / 2 - i * (BOX_H + 15) - Math.random() * 20;
+      return Bodies.rectangle(x, y, BOX_W, BOX_H, {
+        restitution: 0.2,
+        friction:    0.7,
+        frictionAir: 0.02,
         label:       GIFTS[i].id,
       });
     });
     Composite.add(engine.world, bodies);
 
-    /* ── Sincronizar DOM con física ── */
+    /* Sincronizar DOM con físicas */
     Events.on(engine, "afterUpdate", () => {
       bodies.forEach((body, i) => {
-        const li = ballEls[i];
-        const x  = body.position.x - R;
-        const y  = body.position.y - R;
-        li.style.transform = `translate(${x.toFixed(1)}px, ${y.toFixed(1)}px) rotate(${body.angle.toFixed(4)}rad)`;
+        const x = body.position.x - BOX_W / 2;
+        const y = body.position.y - BOX_H / 2;
+        boxEls[i].style.transform =
+          `translate(${x.toFixed(1)}px, ${y.toFixed(1)}px) rotate(${body.angle.toFixed(4)}rad)`;
       });
     });
 
-    /* ── MouseConstraint para arrastrar bolas ── */
-    // Las bolas tienen pointer-events:none; el mouse opera sobre el pool
+    /* MouseConstraint — arrastrar cajas */
     const mouse = Mouse.create(pool);
     mouse.pixelRatio = window.devicePixelRatio || 1;
-    const mc = MouseConstraint.create(engine, {
+    Composite.add(engine.world, MouseConstraint.create(engine, {
       mouse,
       constraint: { stiffness: 0.15, damping: 0.1, render: { visible: false } },
-    });
-    Composite.add(engine.world, mc);
+    }));
 
-    /* ── Detección de clic (click ≠ drag) ── */
+    /* Clic vs drag */
     let downX = 0, downY = 0, dragging = false;
-
-    pool.addEventListener("pointerdown", (e: PointerEvent) => {
-      downX    = e.clientX;
-      downY    = e.clientY;
-      dragging = false;
-    });
-
+    pool.addEventListener("pointerdown", (e: PointerEvent) => { downX = e.clientX; downY = e.clientY; dragging = false; });
     pool.addEventListener("pointermove", (e: PointerEvent) => {
-      if (Math.abs(e.clientX - downX) > 6 || Math.abs(e.clientY - downY) > 6) {
-        dragging = true;
-      }
+      if (Math.abs(e.clientX - downX) > 8 || Math.abs(e.clientY - downY) > 8) dragging = true;
     });
-
     pool.addEventListener("pointerup", (e: PointerEvent) => {
       if (dragging) return;
-
       const rect  = pool.getBoundingClientRect();
       const point = { x: e.clientX - rect.left, y: e.clientY - rect.top };
       const hits  = Query.point(bodies, point);
-
       if (hits.length > 0) {
         const idx = bodies.indexOf(hits[0]);
         if (idx >= 0) {
-          // Pequeño impulso al tocar
-          Body.applyForce(hits[0], hits[0].position, { x: 0, y: -0.035 * R });
+          Body.applyForce(hits[0], hits[0].position, { x: 0, y: -0.04 * BOX_H });
+          boxEls[idx].classList.add("revealed");
           showGift(idx);
         }
       }
     });
 
-    /* ── Cursor: grab sobre bolas ── */
+    /* Cursor grab */
     pool.addEventListener("mousemove", (e: MouseEvent) => {
       const rect  = pool.getBoundingClientRect();
       const point = { x: e.clientX - rect.left, y: e.clientY - rect.top };
-      const hit   = Query.point(bodies, point).length > 0;
-      pool.style.cursor = hit ? "grab" : "default";
+      pool.style.cursor = Query.point(bodies, point).length > 0 ? "grab" : "default";
     });
 
-    /* ── Runner ── */
+    /* Runner + auto-pausa cuando todo se calma */
     const runner = Runner.create();
     Runner.run(runner, engine);
 
-    /* ── Parar la simulación cuando todo se calme (ahorra CPU) ── */
-    let settleTimer = 0;
+    let stillFrames = 0;
     Events.on(engine, "afterUpdate", () => {
-      const allSlow = Composite.allBodies(engine.world)
-        .filter(b => !b.isStatic)
-        .every(b => b.speed < 0.5);
-
-      if (allSlow) {
-        settleTimer++;
-        if (settleTimer > 120) Runner.stop(runner); // 2 s a 60 fps
-      } else {
-        settleTimer = 0;
-      }
+      const allStill = Composite.allBodies(engine.world)
+        .filter(b => !b.isStatic).every(b => b.speed < 0.4);
+      stillFrames = allStill ? stillFrames + 1 : 0;
+      if (stillFrames > 120) Runner.stop(runner);
     });
-
-    /* ── Reactivar la simulación al hacer clic/drag ── */
-    pool.addEventListener("pointerdown", () => {
-      settleTimer = 0;
-      Runner.run(runner, engine);
-    });
+    pool.addEventListener("pointerdown", () => { stillFrames = 0; Runner.run(runner, engine); });
   }
 
   /* ══════════════════════════════════════════
-     OVERLAY DE REGALO
+     OVERLAY
   ══════════════════════════════════════════ */
-  function showGift(index: number) {
-    const g = GIFTS[index];
+  function showGift(idx: number) {
+    const g = GIFTS[idx];
     cardEmoji.textContent = g.emoji;
     cardTitle.textContent = g.label;
     cardDesc.textContent  = g.desc;
     overlay.classList.add("visible");
     overlay.setAttribute("aria-hidden", "false");
   }
-
   closeBtn.addEventListener("click", closeOverlay);
   overlay.addEventListener("click", (e) => { if (e.target === overlay) closeOverlay(); });
-  function closeOverlay() {
-    overlay.classList.remove("visible");
-    overlay.setAttribute("aria-hidden", "true");
-  }
+  function closeOverlay() { overlay.classList.remove("visible"); overlay.setAttribute("aria-hidden", "true"); }
 
   /* ══════════════════════════════════════════
-     INTERSECTION OBSERVER — diferir la física
+     INTERSECTION OBSERVER
   ══════════════════════════════════════════ */
   new IntersectionObserver((entries) => {
     if (entries[0].isIntersecting && !initialized) {
       initialized = true;
       initPhysics();
     }
-  }, { threshold: 0.25 }).observe(section);
+  }, { threshold: 0.2 }).observe(section);
 </script>
 
 <style>
-  /* ── Sección ── */
+  /* ══ Sección ══ */
   .pcs {
     position: relative;
     min-height: 100vh;
     display: flex;
     flex-direction: column;
-    background: linear-gradient(180deg, var(--color-bg) 0%, #110820 100%);
-    padding-top: 4rem;
+    align-items: center;
+    background: #ff85a1;
+    padding-top: 3rem;
+    padding-bottom: 3rem;
     overflow: hidden;
   }
 
-  /* ── Encabezado ── */
+  /* ══ Encabezado ══ */
   .pcs-header {
     text-align: center;
-    z-index: 1;
+    max-width: 540px;
     padding: 0 1rem 1.5rem;
+    z-index: 1;
   }
   .pcs-title {
-    font-size: clamp(1.6rem, 4vw, 2.8rem);
-    font-weight: 400;
-    color: var(--color-text);
-    text-shadow: 0 0 40px rgba(224, 64, 251, 0.5);
-    margin-bottom: 0.5rem;
+    font-size: clamp(1.5rem, 4vw, 2.4rem);
+    font-weight: 700;
+    color: #3d0c2e;
+    margin-bottom: 0.4rem;
   }
   .pcs-subtitle {
-    color: var(--color-text-muted);
-    font-size: 0.9rem;
-    letter-spacing: 0.08em;
+    color: #6b1a40;
+    font-size: 1rem;
+    margin-bottom: 0.3rem;
+  }
+  .pcs-hint {
+    color: #6b1a40;
+    font-size: 0.85rem;
+    letter-spacing: 0.05em;
+    opacity: 0.8;
   }
 
-  /* ── Pool ── */
+  /* ══ Pool estrecho centrado ══ */
+  .pcs-pool-wrap {
+    display: flex;
+    justify-content: center;
+    width: 100%;
+  }
   .pcs-pool {
     position: relative;
-    flex: 1;
-    min-height: 520px;
-    width: 100%;
-    /* Las bolas se posicionan con transform desde arriba-izquierda */
+    width: min(420px, 92vw);
+    height: 680px;
     overflow: hidden;
+    /* Borde cartoon que simula la caja contenedora */
+    border: 4px solid #3d0c2e;
+    border-top: none;
+    border-radius: 0 0 16px 16px;
+    background: #ffccd8;
+    cursor: default;
   }
 
   .pcs-list {
@@ -309,75 +298,158 @@ const gifts: Gift[] = [
     width: 100%;
     height: 100%;
     list-style: none;
-    padding: 0;
-    margin: 0;
+    padding: 0; margin: 0;
   }
 
-  /* ── Bola individual ── */
-  .pcs-ball {
+  /* ══ Cada caja — posición manejada por Matter.js ══ */
+  .pcs-box {
     position: absolute;
     top: 0; left: 0;
-    /* Tamaño se establece desde JS según el viewport */
     will-change: transform;
-    /* pointer-events:none → el mouse opera en el pool para drag */
-    pointer-events: none;
+    pointer-events: none;   /* el pool recibe los eventos del mouse */
   }
 
-  .pcs-ball-inner {
-    width: 100%;
-    height: 100%;
-    border-radius: 50%;
+  /* Indicador de caja ya revelada */
+  .pcs-box.revealed .gb-body::before {
+    content: "✓";
+    position: absolute;
+    inset: 0;
     display: flex;
-    flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 6px;
-    padding: 12px;
-    text-align: center;
-    /* Color radial basado en --hue del padre */
-    background: radial-gradient(
-      circle at 35% 35%,
-      hsl(var(--hue), 60%, 45%) 0%,
-      hsl(var(--hue), 70%, 28%) 100%
-    );
-    border: 1.5px solid hsl(var(--hue), 80%, 60%);
-    box-shadow:
-      inset 0 2px 8px rgba(255,255,255,0.15),
-      0 4px 20px hsl(var(--hue), 70%, 20%);
-    /* Brillo especular */
+    font-size: 2rem;
+    color: rgba(255,255,255,0.6);
+    background: rgba(0,0,0,0.15);
+    border: none;
+  }
+
+  /* ══ Gift box en CSS ══ */
+  .gb {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    filter: drop-shadow(2px 4px 0px rgba(0,0,0,0.25));
+  }
+
+  /* ── Moño ── */
+  .gb-bow-wrap {
+    position: absolute;
+    top: -20px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 56px;
+    height: 36px;
+    z-index: 2;
+  }
+  .gb-bow-l,
+  .gb-bow-r {
+    position: absolute;
+    width: 24px;
+    height: 22px;
+    background: var(--rc);
+    border: 2.5px solid #1a1a1a;
+    border-radius: 50% 0 50% 50%;
+    top: 4px;
+  }
+  .gb-bow-l {
+    left: 2px;
+    transform: rotate(-30deg);
+    transform-origin: right center;
+  }
+  .gb-bow-r {
+    right: 2px;
+    transform: rotate(30deg);
+    transform-origin: left center;
+    border-radius: 0 50% 50% 50%;
+  }
+  .gb-bow-knot {
+    position: absolute;
+    width: 14px;
+    height: 14px;
+    background: var(--rc);
+    border: 2.5px solid #1a1a1a;
+    border-radius: 50%;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 1;
+  }
+  /* Cinta vertical que baja del moño hacia la tapa */
+  .gb-bow-ribbon {
+    position: absolute;
+    width: 14px;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    height: 14px;
+    background: var(--rc);
+    border-left: 2px solid #1a1a1a;
+    border-right: 2px solid #1a1a1a;
+  }
+
+  /* ── Tapa ── */
+  .gb-lid {
+    height: 28%;
+    background: var(--lc);
+    border: 3px solid #1a1a1a;
+    border-radius: 5px 5px 0 0;
+    position: relative;
+    overflow: hidden;
+    z-index: 1;
+  }
+  /* Cinta vertical en la tapa */
+  .gb-lid-ribbon {
+    position: absolute;
+    top: 0; bottom: 0;
+    left: 50%;
+    width: 14px;
+    transform: translateX(-50%);
+    background: var(--rc);
+    border-left: 2px solid #1a1a1a;
+    border-right: 2px solid #1a1a1a;
+  }
+
+  /* ── Cuerpo de la caja ── */
+  .gb-body {
+    flex: 1;
+    background: var(--bc);
+    border: 3px solid #1a1a1a;
+    border-top: none;
+    border-radius: 0 0 5px 5px;
     position: relative;
     overflow: hidden;
   }
-
-  .pcs-ball-inner::before {
+  /* Cinta horizontal */
+  .gb-body::before {
     content: "";
     position: absolute;
-    top: 10%; left: 15%;
-    width: 35%; height: 25%;
-    background: radial-gradient(ellipse, rgba(255,255,255,0.3), transparent);
-    border-radius: 50%;
-    pointer-events: none;
+    top: 50%; left: 0; right: 0;
+    height: 22%;
+    background: var(--rc);
+    transform: translateY(-50%);
+    border-top: 2px solid #1a1a1a;
+    border-bottom: 2px solid #1a1a1a;
+  }
+  /* Cinta vertical */
+  .gb-body::after {
+    content: "";
+    position: absolute;
+    top: 0; bottom: 0;
+    left: 50%;
+    width: 14px;
+    transform: translateX(-50%);
+    background: var(--rc);
+    border-left: 2px solid #1a1a1a;
+    border-right: 2px solid #1a1a1a;
   }
 
-  .pcs-emoji {
-    font-size: clamp(1.4rem, 4vw, 2rem);
-    line-height: 1;
-    display: block;
-  }
-
-  .pcs-label {
-    font-size: clamp(0.55rem, 1.2vw, 0.75rem);
-    font-weight: 600;
-    color: rgba(255, 255, 255, 0.92);
-    line-height: 1.2;
-    letter-spacing: 0.02em;
-  }
-
-  /* ── Overlay de regalo ── */
+  /* ══ Overlay ══ */
   .pcs-overlay {
     position: fixed;
     inset: 0;
-    background: rgba(0, 0, 0, 0.7);
+    background: rgba(0,0,0,0.55);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -387,63 +459,61 @@ const gifts: Gift[] = [
     transition: opacity 0.3s ease;
     backdrop-filter: blur(4px);
   }
-  .pcs-overlay.visible {
-    opacity: 1;
-    pointer-events: all;
-  }
+  .pcs-overlay.visible { opacity: 1; pointer-events: all; }
 
   .pcs-card {
-    background: linear-gradient(135deg, #1e0f35 0%, #2d1060 100%);
-    border: 1px solid rgba(224, 64, 251, 0.35);
+    background: #fff0f5;
+    border: 3px solid #3d0c2e;
     border-radius: 1.5rem;
     padding: 2.5rem 3rem;
     text-align: center;
-    max-width: 380px;
+    max-width: 360px;
     width: 90%;
-    box-shadow: 0 0 40px rgba(224, 64, 251, 0.2), 0 20px 60px rgba(0,0,0,0.5);
-    transform: scale(0.85);
+    box-shadow: 0 8px 0 #3d0c2e, 0 12px 30px rgba(0,0,0,0.3);
+    transform: scale(0.8) rotate(-2deg);
     transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
   }
   .pcs-overlay.visible .pcs-card {
-    transform: scale(1);
+    transform: scale(1) rotate(0deg);
   }
 
   .pcs-card-emoji {
     font-size: 4rem;
-    margin-bottom: 1rem;
     display: block;
-    animation: spin-in 0.5s ease both;
+    margin-bottom: 0.75rem;
+    animation: pop-in 0.4s cubic-bezier(0.34,1.56,0.64,1) both;
   }
-  @keyframes spin-in {
-    from { transform: rotate(-30deg) scale(0); opacity: 0; }
-    to   { transform: rotate(0deg)  scale(1); opacity: 1; }
+  @keyframes pop-in {
+    from { transform: scale(0) rotate(-20deg); }
+    to   { transform: scale(1) rotate(0deg); }
   }
 
   .pcs-card-title {
-    font-size: 1.5rem;
-    font-weight: 400;
-    color: var(--color-text);
-    margin-bottom: 0.75rem;
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: #3d0c2e;
+    margin-bottom: 0.6rem;
   }
   .pcs-card-desc {
-    color: var(--color-text-muted);
+    color: #6b1a40;
     font-size: 0.95rem;
     line-height: 1.6;
-    margin-bottom: 1.8rem;
+    margin-bottom: 1.6rem;
   }
   .pcs-card-close {
-    background: linear-gradient(135deg, var(--color-accent-2), var(--color-accent));
-    color: #fff;
-    border: none;
+    background: #ff85a1;
+    color: #3d0c2e;
+    border: 2.5px solid #3d0c2e;
     border-radius: 2rem;
-    padding: 0.65rem 2rem;
+    padding: 0.6rem 2rem;
     font-size: 0.9rem;
-    letter-spacing: 0.05em;
+    font-weight: 700;
     cursor: pointer;
-    transition: transform 0.15s ease, box-shadow 0.15s ease;
+    box-shadow: 0 4px 0 #3d0c2e;
+    transition: transform 0.1s, box-shadow 0.1s;
   }
-  .pcs-card-close:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(224, 64, 251, 0.35);
+  .pcs-card-close:active {
+    transform: translateY(3px);
+    box-shadow: 0 1px 0 #3d0c2e;
   }
 </style>
