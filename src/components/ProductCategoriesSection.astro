@@ -10,15 +10,13 @@ interface Gift {
 }
 
 const gifts: Gift[] = [
-  { id: "viaje",     label: "Viajecito",         emoji: "✈️", desc: "Escapada en vacaciones de invierno a lugar a definir",  boxColor: "#FFA726", lidColor: "#FB8C00", ribbonColor: "#F06292" },
-  { id: "tablet",    label: "Tablet",             emoji: "📱", desc: "Un chiche para mirar tus series de noche",             boxColor: "#42A5F5", lidColor: "#1E88E5", ribbonColor: "#FFEE58" },
-  { id: "ebook",     label: "Ebook",              emoji: "📚", desc: "Pa que nunca te quedes sin leer",                      boxColor: "#66BB6A", lidColor: "#43A047", ribbonColor: "#EF5350" },
-  { id: "cena",      label: "Cena romántica",     emoji: "🍷", desc: "Una noche especial solo para los dos",                 boxColor: "#EF5350", lidColor: "#E53935", ribbonColor: "#FFEE58" },
-  { id: "spa",       label: "Spa day",            emoji: "💆", desc: "Un día de descanso y mimos que te merecés",            boxColor: "#AB47BC", lidColor: "#8E24AA", ribbonColor: "#80DEEA" },
-  { id: "concierto", label: "Concierto sorpresa", emoji: "🎶", desc: "Tu artista favorito, juntos en vivo",                  boxColor: "#26C6DA", lidColor: "#00ACC1", ribbonColor: "#FF8A65" },
-  { id: "picnic",    label: "Picnic nocturno",    emoji: "🌙", desc: "Una noche mágica al aire libre",                      boxColor: "#FFEE58", lidColor: "#FDD835", ribbonColor: "#7E57C2" },
-  { id: "pelis",     label: "Día de películas",   emoji: "🎬", desc: "Pijamas, pochoclo y maratón de tus favoritas",        boxColor: "#FF7043", lidColor: "#F4511E", ribbonColor: "#B2DFDB" },
-  { id: "sorpresa",  label: "Sorpresa especial",  emoji: "🎁", desc: "Esto es solo el comienzo...",                         boxColor: "#EC407A", lidColor: "#D81B60", ribbonColor: "#FFFFFF" },
+  { id: "viaje",     label: "Viajecito",          emoji: "✈️", desc: "Escapada en vacaciones de invierno a lugar a definir",  boxColor: "#FFA726", lidColor: "#FB8C00", ribbonColor: "#F06292" },
+  { id: "tablet",    label: "Tablet",             emoji: "📱", desc: "Chiche para mirar tus series de noche",                 boxColor: "#42A5F5", lidColor: "#1E88E5", ribbonColor: "#FFEE58" },
+  { id: "ebook",     label: "Ebook",              emoji: "📚", desc: "Pa que nunca te quedes sin leer",                       boxColor: "#66BB6A", lidColor: "#43A047", ribbonColor: "#EF5350" },
+  { id: "cena",      label: "Cena",               emoji: "🍷", desc: "Comer como unos gorditos en papagaio",                  boxColor: "#EF5350", lidColor: "#E53935", ribbonColor: "#FFEE58" },
+  { id: "spa",       label: "Masajitos",          emoji: "💆", desc: "Masajitos en los pies",                                 boxColor: "#AB47BC", lidColor: "#8E24AA", ribbonColor: "#80DEEA" },
+  { id: "concierto", label: "Concierto",          emoji: "🎶", desc: "Entradas para ver a Ricky Martin",                      boxColor: "#26C6DA", lidColor: "#00ACC1", ribbonColor: "#FF8A65" },
+  { id: "cab",       label: "CAB",                emoji: "🏴‍☠️", desc: "Abono pa ver al pirata",                                boxColor: "#FFEE58", lidColor: "#FDD835", ribbonColor: "#7E57C2" }
 ];
 ---
 
@@ -95,15 +93,13 @@ const gifts: Gift[] = [
 
   /* ── Datos (espejo del frontmatter) ── */
   const GIFTS = [
-    { id: "viaje",     label: "Viajecito",         emoji: "✈️", desc: "Escapada en vacaciones de invierno a lugar a definir"  },
-    { id: "tablet",    label: "Tablet",             emoji: "📱", desc: "Un chiche para mirar tus series de noche"             },
-    { id: "ebook",     label: "Ebook",              emoji: "📚", desc: "Pa que nunca te quedes sin leer"                      },
-    { id: "cena",      label: "Cena romántica",     emoji: "🍷", desc: "Una noche especial solo para los dos"                 },
-    { id: "spa",       label: "Spa day",            emoji: "💆", desc: "Un día de descanso y mimos que te merecés"            },
-    { id: "concierto", label: "Concierto sorpresa", emoji: "🎶", desc: "Tu artista favorito, juntos en vivo"                  },
-    { id: "picnic",    label: "Picnic nocturno",    emoji: "🌙", desc: "Una noche mágica al aire libre"                      },
-    { id: "pelis",     label: "Día de películas",   emoji: "🎬", desc: "Pijamas, pochoclo y maratón de tus favoritas"        },
-    { id: "sorpresa",  label: "Sorpresa especial",  emoji: "🎁", desc: "Esto es solo el comienzo..."                         },
+    { id: "viaje",     label: "Viajecito",          emoji: "✈️", desc: "Escapada en vacaciones de invierno a lugar a definir" },
+    { id: "tablet",    label: "Tablet",             emoji: "📱", desc: "Chiche para mirar tus series de noche" },
+    { id: "ebook",     label: "Ebook",              emoji: "📚", desc: "Pa que nunca te quedes sin leer" },
+    { id: "cena",      label: "Cena",               emoji: "🍷", desc: "Comer como unos gorditos en papagaio" },
+    { id: "spa",       label: "Masajitos",          emoji: "💆", desc: "Masajitos en los pies" },
+    { id: "concierto", label: "Concierto",          emoji: "🎶", desc: "Entradas para ver a Ricky Martin" },
+    { id: "cab",       label: "CAB",                emoji: "🏴‍☠️", desc: "Abono pa ver al pirata" }
   ];
 
   /* Dimensiones de la caja — deben coincidir con el CSS */
