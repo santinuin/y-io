@@ -10,37 +10,36 @@ const imgs = [
   "corazon.png", "belgrano.webp",  // índices 8 y 9
 ];
 
-// Distribuidos en una cuadrícula 5×4 de ~20vw × 25vh por celda.
-// Dentro de cada celda, posición ligeramente aleatoria pero controlada
-// para que nunca queden dos stickers muy juntos.
 const stickers = [
-  // ── Fila 1 (top ~2–10vh) ─────────────────────────────────────
-  { img: 0, size: 125, rotate: -14, top:  "3vh",  left:  "1vw"  },
-  { img: 8, size: 108, rotate:  10, top:  "6vh",  left: "21vw"  }, // corazon
-  { img: 4, size: 118, rotate: -18, top:  "2vh",  left: "42vw"  },
-  { img: 2, size: 132, rotate:   7, top:  "5vh",  left: "63vw"  },
-  { img: 6, size: 115, rotate:  20, top:  "3vh",  left: "84vw"  },
+  { img: 0, size: 132, rotate: -23, top:  "1vh",  left:  "0vw"  },
+  { img: 8, size: 104, rotate:  31, top:  "8vh",  left: "18vw"  },
+  { img: 4, size: 145, rotate:  -7, top: "-2vh",  left: "37vw"  },
+  { img: 2, size: 118, rotate:  17, top:  "5vh",  left: "58vw"  },
+  { img: 6, size: 128, rotate: -38, top:  "0vh",  left: "80vw"  },
 
-  // ── Fila 2 (top ~27–35vh) ────────────────────────────────────
-  { img: 1, size: 120, rotate: -22, top: "29vh",  left:  "8vw"  },
-  { img: 5, size: 135, rotate:  13, top: "27vh",  left: "30vw"  },
-  { img: 9, size: 122, rotate:  -6, top: "31vh",  left: "54vw"  }, // belgrano
-  { img: 3, size: 118, rotate: -11, top: "28vh",  left: "74vw"  },
-  { img: 7, size: 128, rotate:  17, top: "33vh",  left: "93vw"  },
+  { img: 1, size: 110, rotate:  42, top: "19vh",  left:  "6vw"  },
+  { img: 5, size: 138, rotate: -15, top: "24vh",  left: "28vw"  },
+  { img: 9, size: 122, rotate:  27, top: "16vh",  left: "49vw"  },
+  { img: 3, size: 115, rotate: -33, top: "22vh",  left: "70vw"  },
+  { img: 7, size: 130, rotate:   8, top: "18vh",  left: "92vw"  },
 
-  // ── Fila 3 (top ~52–60vh) ────────────────────────────────────
-  { img: 2, size: 118, rotate:   9, top: "54vh",  left:  "2vw"  },
-  { img: 6, size: 140, rotate: -16, top: "52vh",  left: "23vw"  },
-  { img: 8, size: 104, rotate:  12, top: "58vh",  left: "45vw"  }, // corazon
-  { img: 0, size: 126, rotate:  21, top: "53vh",  left: "67vw"  },
-  { img: 4, size: 112, rotate:  -8, top: "56vh",  left: "88vw"  },
+  { img: 2, size: 125, rotate: -19, top: "41vh",  left:  "2vw"  },
+  { img: 6, size: 108, rotate:  35, top: "37vh",  left: "22vw"  },
+  { img: 8, size: 140, rotate: -44, top: "44vh",  left: "44vw"  },
+  { img: 0, size: 116, rotate:  12, top: "39vh",  left: "66vw"  },
+  { img: 4, size: 134, rotate: -26, top: "43vh",  left: "87vw"  },
 
-  // ── Fila 4 (top ~76–84vh) ────────────────────────────────────
-  { img: 3, size: 130, rotate: -13, top: "78vh",  left:  "5vw"  },
-  { img: 7, size: 120, rotate:  14, top: "76vh",  left: "26vw"  },
-  { img: 9, size: 116, rotate:   5, top: "80vh",  left: "50vw"  }, // belgrano
-  { img: 5, size: 138, rotate:  -5, top: "77vh",  left: "71vw"  },
-  { img: 1, size: 115, rotate:  18, top: "79vh",  left: "91vw"  },
+  { img: 3, size: 120, rotate:  39, top: "62vh",  left:  "9vw"  },
+  { img: 7, size: 112, rotate: -11, top: "58vh",  left: "31vw"  },
+  { img: 9, size: 136, rotate:  22, top: "65vh",  left: "53vw"  },
+  { img: 5, size: 126, rotate: -40, top: "60vh",  left: "75vw"  },
+  { img: 1, size: 118, rotate:  16, top: "63vh",  left: "94vw"  },
+
+  { img: 6, size: 130, rotate: -28, top: "80vh",  left:  "3vw"  },
+  { img: 8, size: 106, rotate:  44, top: "85vh",  left: "24vw"  },
+  { img: 2, size: 142, rotate:  -9, top: "78vh",  left: "46vw"  },
+  { img: 0, size: 114, rotate:  33, top: "83vh",  left: "68vw"  },
+  { img: 9, size: 124, rotate: -20, top: "80vh",  left: "89vw"  },
 ];
 ---
 
