@@ -5,42 +5,48 @@
  * a partir de la derivada de la curva (tangente a la ola),
  * replicando la técnica del TextScroll de Ricola.
  *
- * Con scrollDriven=true el contenedor entero aparece desde la
- * izquierda, llega al centro y vuelve a salir por la izquierda
- * a medida que el usuario hace scroll en la sección hero.
+ * Con scrollDriven=true la fase de la ola está 100% ligada al scroll:
+ * no hay animación autónoma. El scroll avanza/retrocede la ola.
  */
 interface Props {
   text: string;
   /** Altura máxima de la ola en px */
   amplitude?: number;
-  /** Ciclos de ola sobre el texto completo */
+  /** Ciclos de ola distribuidos sobre el texto */
   frequency?: number;
   /** Separación horizontal entre caracteres en px */
   charWidth?: number;
   /** Tamaño de fuente en px */
   fontSize?: number;
-  /** Velocidad de la animación (radianes por segundo) */
-  speed?: number;
   /**
-   * Cuando true, el contenedor completo entra y sale por la izquierda
-   * sincronizado con el scroll del hero (#hero).
+   * Cuántos radianes recorre la fase de la ola de scroll=0 a scroll=1.
+   * Más alto = la ola "gira" más mientras el texto cruza la pantalla.
+   * Default: Math.PI * 3  (1.5 ciclos completos)
+   */
+  phaseRange?: number;
+  /** Suavizado del lerp (0-1). Más bajo = más lag / más suave. */
+  lerpFactor?: number;
+  /**
+   * Cuando true, el contenedor entra por la derecha, cruza centrado
+   * y sale por la izquierda, sincronizado con el scroll del hero.
    */
   scrollDriven?: boolean;
 }
 
 const {
   text,
-  amplitude   = 28,
-  frequency   = 0.9,
-  charWidth   = 26,
-  fontSize    = 32,
-  speed       = 1.4,
+  amplitude    = 28,
+  frequency    = 0.9,
+  charWidth    = 26,
+  fontSize     = 32,
+  phaseRange   = Math.PI * 3,
+  lerpFactor   = 0.1,
   scrollDriven = false,
 } = Astro.props;
 
-const chars         = text.split("");
-const totalWidth    = chars.length * charWidth;
-const containerH    = amplitude * 2 + fontSize * 1.8;
+const chars      = text.split("");
+const totalWidth = chars.length * charWidth;
+const containerH = amplitude * 2 + fontSize * 1.8;
 ---
 
 <div
@@ -49,8 +55,8 @@ const containerH    = amplitude * 2 + fontSize * 1.8;
   data-amplitude={amplitude}
   data-frequency={frequency}
   data-char-width={charWidth}
-  data-font-size={fontSize}
-  data-speed={speed}
+  data-phase-range={phaseRange}
+  data-lerp-factor={lerpFactor}
   data-total={chars.length}
   data-total-width={totalWidth}
   data-scroll-driven={scrollDriven}
@@ -59,7 +65,7 @@ const containerH    = amplitude * 2 + fontSize * 1.8;
   <span class="wt-sr-only">{text}</span>
 
   {chars.map((char, i) => (
-    <span class="wt-char" aria-hidden="true" data-i={i}>
+    <span class="wt-char" aria-hidden="true">
       {char === " " ? "\u00A0" : char}
     </span>
   ))}
@@ -69,81 +75,73 @@ const containerH    = amplitude * 2 + fontSize * 1.8;
   const root  = document.getElementById("wave-text-root") as HTMLElement;
   const spans = root.querySelectorAll<HTMLElement>(".wt-char");
 
-  const amplitude    = parseFloat(root.dataset.amplitude    ?? "28");
-  const frequency    = parseFloat(root.dataset.frequency    ?? "0.9");
-  const charWidth    = parseFloat(root.dataset.charWidth    ?? "26");
-  const speed        = parseFloat(root.dataset.speed        ?? "1.4");
-  const total        = parseInt  (root.dataset.total        ?? "1");
-  const totalWidth   = parseFloat(root.dataset.totalWidth   ?? "0");
+  const amplitude    = parseFloat(root.dataset.amplitude   ?? "28");
+  const frequency    = parseFloat(root.dataset.frequency   ?? "0.9");
+  const charWidth    = parseFloat(root.dataset.charWidth   ?? "26");
+  const phaseRange   = parseFloat(root.dataset.phaseRange  ?? String(Math.PI * 3));
+  const lerpFactor   = parseFloat(root.dataset.lerpFactor  ?? "0.1");
+  const total        = parseInt  (root.dataset.total       ?? "1");
+  const totalWidth   = parseFloat(root.dataset.totalWidth  ?? "0");
   const scrollDriven = root.dataset.scrollDriven === "true";
 
-  let phase          = 0;
-  let lastTime       = 0;
-  let scrollProgress = 0;   // 0 → 1 dentro del hero
+  let scrollProgress = 0;   // 0 → 1, actualizado en onScroll
+  let phase          = 0;   // fase actual (lerpeada hacia targetPhase)
+  let targetPhase    = 0;   // fase objetivo dictada por el scroll
 
-  /* ── Scroll: usa el wrapper sticky si existe, si no el hero ── */
+  /* ── Fuente del scroll ── */
   const wrapper = document.getElementById("hero-sticky-wrapper");
   const hero    = document.getElementById("hero");
 
   function onScroll() {
     if (wrapper) {
-      // El espacio scrolleable del wrapper es (wrapperHeight - windowHeight)
       const scrollableH = wrapper.offsetHeight - window.innerHeight;
       const relScroll   = window.scrollY - wrapper.offsetTop;
       scrollProgress    = Math.max(0, Math.min(relScroll / scrollableH, 1));
     } else if (hero) {
       scrollProgress = Math.min(window.scrollY / hero.offsetHeight, 1);
     }
+
+    // ── La fase objetivo es una función directa del scroll ──
+    // El scroll lleva la ola de 0 a phaseRange radianes.
+    targetPhase = scrollProgress * phaseRange;
   }
+
   window.addEventListener("scroll", onScroll, { passive: true });
 
-  /* ── Loop principal ── */
-  function render(now: number) {
-    const dt = Math.min((now - lastTime) / 1000, 0.05);
-    lastTime = now;
+  /* ── Loop de render ── */
+  function render() {
+    // Lerp suave: la fase actual se acerca a la objetivo cada frame.
+    // Esto evita saltos bruscos si el scroll es rápido o discreto.
+    phase += (targetPhase - phase) * lerpFactor;
 
-    /* ─────────────────────────────────────────────────────
-       MODO SCROLL-DRIVEN
-       curve = sin(progress × π)
-         → 0 al inicio, 1 al centro del scroll, 0 al final
-       El contenedor entra desde la izquierda, llega al centro
-       y vuelve a salir por la izquierda.
-    ───────────────────────────────────────────────────── */
+    /* ── Posición del contenedor (scroll-driven) ── */
     if (scrollDriven) {
-      // Distancia suficiente para salir completamente del viewport
+      // Entra por la DERECHA, sale por la IZQUIERDA
+      // progress=0   → +slideDistance  (fuera a la derecha)
+      // progress=0.5 → 0               (centrado)
+      // progress=1   → -slideDistance  (fuera a la izquierda)
       const slideDistance = window.innerWidth + totalWidth / 2;
-
-      // Movimiento lineal: entra por la DERECHA, sale por la IZQUIERDA
-      // progress=0 → +slideDistance (derecha, fuera)
-      // progress=0.5 → 0 (centro)
-      // progress=1 → -slideDistance (izquierda, fuera)
-      const containerX = slideDistance * (1 - 2 * scrollProgress);
+      const containerX    = slideDistance * (1 - 2 * scrollProgress);
       root.style.transform = `translateX(${containerX.toFixed(1)}px)`;
 
-      // Opacidad: fade-in en el primer 15%, plena en el medio,
-      // fade-out en el último 15%
+      // Fade-in primer 15% · opaco en el centro · fade-out último 15%
       const opacity = Math.min(scrollProgress / 0.15, 1, (1 - scrollProgress) / 0.15);
       root.style.opacity = opacity.toFixed(4);
-
-      // La ola avanza a velocidad constante
-      phase += speed * dt;
-    } else {
-      // Comportamiento original: la ola avanza siempre
-      phase += speed * dt * (1 + scrollProgress * 1.5);
     }
 
-    // Amplitud se mantiene constante en modo scroll-driven
-    // (la visibilidad ya la controla la opacidad del contenedor)
-    const currentAmplitude = scrollDriven
-      ? amplitude
-      : amplitude * (1 - scrollProgress * 0.75);
-
-    /* ─ Posicionar cada carácter ─ */
+    /* ── Posicionar cada carácter sobre la ola ── */
     spans.forEach((span, i) => {
+      // theta: posición de este carácter en el ciclo sinusoidal
       const theta  = (i / total) * frequency * Math.PI * 2 - phase;
+
+      // X: distribución lineal centrada en el contenedor
       const x      = i * charWidth - totalWidth / 2 + charWidth / 2;
-      const y      = currentAmplitude * Math.sin(theta);
-      const dy     = currentAmplitude * (frequency * Math.PI * 2 / total) * Math.cos(theta);
+
+      // Y: curva sinusoidal
+      const y      = amplitude * Math.sin(theta);
+
+      // Rotación: tangente de la curva (derivada del seno = coseno)
+      const dy     = amplitude * (frequency * Math.PI * 2 / total) * Math.cos(theta);
       const rotDeg = Math.atan2(dy, charWidth) * (180 / Math.PI);
 
       span.style.transform =
@@ -153,7 +151,7 @@ const containerH    = amplitude * 2 + fontSize * 1.8;
     requestAnimationFrame(render);
   }
 
-  requestAnimationFrame((t) => { lastTime = t; render(t); });
+  requestAnimationFrame(render);
 </script>
 
 <style>
@@ -161,16 +159,14 @@ const containerH    = amplitude * 2 + fontSize * 1.8;
     position: relative;
     width: var(--wt-width);
     height: var(--wt-height);
-    max-width: none;   /* No recortar: el hero.overflow:hidden se encarga */
+    max-width: none;
     flex-shrink: 0;
     will-change: transform, opacity;
   }
 
-  /* Estado inicial cuando el scroll controla la posición:
-     invisible y empujado a la izquierda hasta que el JS tome el control */
   .wave-text-root.is-scroll-driven {
     opacity: 0;
-    transform: translateX(200vw);  /* fuera del viewport por la derecha */
+    transform: translateX(200vw);
   }
 
   .wt-sr-only {
@@ -192,7 +188,6 @@ const containerH    = amplitude * 2 + fontSize * 1.8;
     will-change: transform;
   }
 
-  /* Solo mostrar fade-in en modo normal (no scroll-driven) */
   .wave-text-root:not(.is-scroll-driven) .wt-char {
     animation: wt-fade-in 0.5s ease both;
   }
