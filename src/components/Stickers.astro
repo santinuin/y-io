@@ -88,5 +88,10 @@ const stickers = [
       width:  calc(var(--size) * 0.55);
       height: calc(var(--size) * 0.55);
     }
+
+    /* Ocultar los stickers pares — quedan 10 de 20, uno por celda aprox */
+    .sticker:nth-child(even) {
+      display: none;
+    }
   }
 </style>
