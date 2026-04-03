@@ -1,47 +1,24 @@
 ---
-/**
- * Stickers — imágenes decorativas fijas que simulan
- * pegatinas pegadas a la pared, visibles mientras se hace scroll.
- *
- * Están en position:fixed con z-index:1.
- * El contenido principal tiene z-index:2 para quedar encima.
- */
-
-interface Sticker {
-  src:    string;
-  size:   number;  // px
-  rotate: number;  // grados
-  top?:   string;
-  bottom?: string;
-  left?:  string;
-  right?: string;
-}
-
-const stickers: Sticker[] = [
-  // — Columna izquierda —
-  { src: "/stickers/mollo.webp",      size: 88,  rotate: -12, top: "6vh",   left: "-14px"  },
-  { src: "/stickers/nara.webp",       size: 100, rotate: 8,   top: "28vh",  left: "-10px"  },
-  { src: "/stickers/coqui3.webp",     size: 80,  rotate: -7,  top: "55vh",  left: "-16px"  },
-  { src: "/stickers/nara2.webp",      size: 92,  rotate: 14,  top: "78vh",  left: "-8px"   },
-
-  // — Columna derecha —
-  { src: "/stickers/coqui.webp",      size: 84,  rotate: 10,  top: "4vh",   right: "-12px" },
-  { src: "/stickers/coqui2.webp",     size: 96,  rotate: -9,  top: "35vh",  right: "-16px" },
-  { src: "/stickers/coquimollo.webp", size: 108, rotate: 5,   top: "62vh",  right: "-10px" },
-  { src: "/stickers/nara3.webp",      size: 82,  rotate: -15, top: "85vh",  right: "-8px"  },
+const stickers = [
+  { src: "/stickers/mollo.webp",      size: 130, rotate: -15, top: "3vh",   left: "5vw"   },
+  { src: "/stickers/coqui.webp",      size: 118, rotate: 18,  top: "7vh",   right: "7vw"  },
+  { src: "/stickers/nara.webp",       size: 140, rotate: -8,  top: "30vh",  left: "2vw"   },
+  { src: "/stickers/coqui2.webp",     size: 125, rotate: 22,  top: "22vh",  right: "4vw"  },
+  { src: "/stickers/coqui3.webp",     size: 135, rotate: -20, top: "54vh",  left: "6vw"   },
+  { src: "/stickers/coquimollo.webp", size: 150, rotate: 9,   top: "46vh",  right: "3vw"  },
+  { src: "/stickers/nara2.webp",      size: 128, rotate: 17,  top: "76vh",  left: "3vw"   },
+  { src: "/stickers/nara3.webp",      size: 120, rotate: -13, top: "80vh",  right: "8vw"  },
 ];
 ---
 
 <div class="stickers-layer" aria-hidden="true">
-  {stickers.map((s) => {
-    const style = [
-      s.top    && `top: ${s.top}`,
-      s.bottom && `bottom: ${s.bottom}`,
-      s.left   && `left: ${s.left}`,
-      s.right  && `right: ${s.right}`,
-      `--size: ${s.size}px`,
-      `--rot: ${s.rotate}deg`,
-    ].filter(Boolean).join("; ");
+  {stickers.map((s, i) => {
+    const pos = [
+      s.top    && `top:${s.top}`,
+      s.bottom && `bottom:${s.bottom}`,
+      s.left   && `left:${s.left}`,
+      s.right  && `right:${s.right}`,
+    ].filter(Boolean).join(";");
 
     return (
       <img
@@ -50,7 +27,7 @@ const stickers: Sticker[] = [
         alt=""
         width={s.size}
         height={s.size}
-        style={style}
+        style={`${pos};--size:${s.size}px;--rot:${s.rotate}deg;--delay:${i * 70}ms`}
         loading="lazy"
         draggable="false"
       />
@@ -73,23 +50,19 @@ const stickers: Sticker[] = [
     height: var(--size);
     object-fit: contain;
     transform: rotate(var(--rot));
-    /* Sombra suave para el efecto "pegado" */
-    filter: drop-shadow(2px 3px 6px rgba(0, 0, 0, 0.18));
-    /* Pequeña transición al cargar */
-    animation: sticker-drop 0.4s cubic-bezier(0.34, 1.4, 0.64, 1) both;
-    animation-delay: calc(var(--i, 0) * 60ms);
+    filter: drop-shadow(2px 4px 8px rgba(0,0,0,0.2));
+    animation: sticker-pop 0.5s cubic-bezier(0.34, 1.4, 0.64, 1) var(--delay) both;
   }
 
-  @keyframes sticker-drop {
-    from { opacity: 0; transform: rotate(var(--rot)) scale(0.6); }
+  @keyframes sticker-pop {
+    from { opacity: 0; transform: rotate(var(--rot)) scale(0.5); }
     to   { opacity: 1; transform: rotate(var(--rot)) scale(1);   }
   }
 
-  /* En pantallas pequeñas los stickers se reducen para no tapar contenido */
   @media (max-width: 600px) {
     .sticker {
-      width:  calc(var(--size) * 0.65);
-      height: calc(var(--size) * 0.65);
+      width:  calc(var(--size) * 0.6);
+      height: calc(var(--size) * 0.6);
     }
   }
 </style>
