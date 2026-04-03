@@ -1,8 +1,17 @@
 ---
 import Layout from "../layouts/Layout.astro";
 import Hero from "../components/Hero.astro";
+import LoveModal from "../components/LoveModal.astro";
 import ProductCategoriesSection from "../components/ProductCategoriesSection.astro";
 import Stickers from "../components/Stickers.astro";
+
+const modalSteps = [
+  "Antes de que sigas te quería decir...",
+  "DOSMILDOCEEEEE 🎶...",
+  "Mentira amol... jiji",
+  "Te quería decir que mientras hacia la página y buscaba fotitos e ideas, no dejaba de pensar en lo hermoso que es compartir la vida con vos...",
+  "No te olvides nunca pero nunca, ¡te amo infinito meu amoi!",
+];
 ---
 
 <Layout>
@@ -11,6 +20,7 @@ import Stickers from "../components/Stickers.astro";
     <Hero />
     <ProductCategoriesSection />
   </div>
+  <LoveModal steps={modalSteps} />
 </Layout>
 
 <style>

@@ -1,0 +1,199 @@
+---
+interface Props {
+  steps: string[];
+  title?: string;
+}
+
+const {
+  steps,
+  title = "IMPORTANTE ⚠️ ALERTA",
+} = Astro.props;
+---
+
+<div class="love-modal-overlay" id="love-modal-overlay" aria-hidden="true">
+  <div class="love-modal" role="dialog" aria-modal="true">
+    <p class="love-modal__title">{title}</p>
+    <p class="love-modal__body" id="love-modal-body"></p>
+    <div class="love-modal__footer">
+      <span class="love-modal__dots" id="love-modal-dots"></span>
+      <button class="love-modal__btn" id="love-modal-btn"></button>
+    </div>
+  </div>
+</div>
+
+<script define:vars={{ steps }}>
+  const overlay = document.getElementById("love-modal-overlay");
+  const bodyEl  = document.getElementById("love-modal-body");
+  const dotsEl  = document.getElementById("love-modal-dots");
+  const btn     = document.getElementById("love-modal-btn");
+
+  let step = 0;
+
+  function renderDots() {
+    dotsEl.innerHTML = steps
+      .map((_, i) => `<span class="dot${i === step ? " dot--active" : ""}"></span>`)
+      .join("");
+  }
+
+  function renderStep(animate = true) {
+    if (animate) {
+      bodyEl.classList.add("is-leaving");
+      setTimeout(() => {
+        bodyEl.textContent = steps[step];
+        btn.textContent    = step < steps.length - 1 ? "Seguir... 💕" : "Weno chi ❤️";
+        renderDots();
+        bodyEl.classList.remove("is-leaving");
+        bodyEl.classList.add("is-entering");
+        setTimeout(() => bodyEl.classList.remove("is-entering"), 350);
+      }, 200);
+    } else {
+      bodyEl.textContent = steps[step];
+      btn.textContent    = step < steps.length - 1 ? "Seguir... 💕" : "Weno chi ❤️";
+      renderDots();
+    }
+  }
+
+  function showModal() {
+    step = 0;
+    renderStep(false);
+    overlay.classList.add("is-visible");
+    overlay.setAttribute("aria-hidden", "false");
+    document.body.style.overflow = "hidden";
+  }
+
+  function closeModal() {
+    overlay.classList.remove("is-visible");
+    overlay.setAttribute("aria-hidden", "true");
+    document.body.style.overflow = "";
+  }
+
+  btn.addEventListener("click", () => {
+    if (step < steps.length - 1) {
+      step++;
+      renderStep();
+    } else {
+      closeModal();
+    }
+  });
+
+  // Escucha el evento emitido por Hero cuando el scroll llega al final
+  window.addEventListener("loveModal:show", showModal);
+</script>
+
+<style>
+  .love-modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 999;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 107, 142, 0.6);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+  }
+
+  .love-modal-overlay.is-visible {
+    display: flex;
+    animation: overlayFadeIn 0.4s ease forwards;
+  }
+
+  @keyframes overlayFadeIn {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+  }
+
+  .love-modal {
+    background: var(--color-surface);
+    border: 2px solid rgba(255, 255, 255, 0.4);
+    border-radius: 1.5rem;
+    padding: 2.5rem 2rem;
+    max-width: min(480px, 90vw);
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 1.2rem;
+    color: var(--color-text);
+    font-family: var(--font-display);
+    font-size: 1.05rem;
+    line-height: 1.7;
+    text-align: center;
+    box-shadow: 0 8px 40px rgba(0, 0, 0, 0.25);
+    animation: modalSlideIn 0.4s ease forwards;
+  }
+
+  @keyframes modalSlideIn {
+    from { transform: translateY(20px) scale(0.97); opacity: 0; }
+    to   { transform: translateY(0) scale(1);       opacity: 1; }
+  }
+
+  .love-modal__title {
+    font-size: 1.35rem;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+  }
+
+  .love-modal__body {
+    min-height: 4rem;
+    transition: opacity 0.2s ease, transform 0.2s ease;
+  }
+
+  .love-modal__body.is-leaving {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+
+  .love-modal__body.is-entering {
+    animation: bodyEnter 0.3s ease forwards;
+  }
+
+  @keyframes bodyEnter {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0);   }
+  }
+
+  .love-modal__footer {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+    margin-top: 0.5rem;
+  }
+
+  .love-modal__dots {
+    display: flex;
+    gap: 0.4rem;
+  }
+
+  .love-modal__dots :global(.dot) {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.4);
+    transition: background 0.2s ease, transform 0.2s ease;
+  }
+
+  .love-modal__dots :global(.dot--active) {
+    background: white;
+    transform: scale(1.25);
+  }
+
+  .love-modal__btn {
+    align-self: center;
+    background: white;
+    color: var(--color-surface);
+    border: none;
+    border-radius: 2rem;
+    padding: 0.65rem 2rem;
+    font-family: var(--font-display);
+    font-size: 1rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+  }
+
+  .love-modal__btn:hover {
+    transform: scale(1.04);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+  }
+</style>

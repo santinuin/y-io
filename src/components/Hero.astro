@@ -38,21 +38,26 @@ import TextScroll from "./TextScroll.astro";
   const wrapper    = document.getElementById("hero-sticky-wrapper") as HTMLElement;
   const scrollHint = document.getElementById("scroll-hint") as HTMLElement;
 
+  let modalShown = false;
+
   window.addEventListener("scroll", () => {
     const scrollableH = wrapper.offsetHeight - window.innerHeight;
     const progress    = Math.min(window.scrollY / scrollableH, 1);
-    // El hint desaparece en el primer 20% del scroll
+
     scrollHint.style.opacity = String(Math.max(0, 1 - progress * 5));
+
+    if (!modalShown && progress >= 1) {
+      modalShown = true;
+      window.dispatchEvent(new Event("loveModal:show"));
+    }
   }, { passive: true });
 </script>
 
 <style>
-  /* Wrapper de 300vh: da espacio para la animación sin mover la vista */
   .hero-sticky-wrapper {
     height: 300vh;
   }
 
-  /* El hero ocupa 100vh y se queda fijo mientras el wrapper scrollea */
   .hero {
     position: sticky;
     top: 0;
@@ -65,7 +70,6 @@ import TextScroll from "./TextScroll.astro";
     gap: 2rem;
   }
 
-  /* Tipografía del texto ondulante */
   .hero :global(.TextScroll--char) {
     color: #ffffff;
     font-family: var(--font-display);

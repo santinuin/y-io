@@ -130,6 +130,8 @@ const totalWidth = chars.length * charSpacing;
 
   window.addEventListener("scroll", onScroll, { passive: true });
   onScroll();
+  // Snap al offset inicial para evitar el viaje desde el centro en el primer frame
+  offset = targetOffset;
 
   /* ── Función de posicionamiento de cada carácter ── */
   function getTransform(index: number, currentOffset: number) {
