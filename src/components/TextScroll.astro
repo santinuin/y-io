@@ -1,0 +1,176 @@
+---
+/**
+ * TextScroll — texto curvo animado estilo Ricola.
+ *
+ * Fórmula de posicionamiento (igual a Ricola):
+ *   x   = offsetX + i * charSpacing - scrollOffset
+ *   y   = offsetY - amplitude * sin((x / wavelength) * 2π)
+ *   rot = -atan(dy/dx) en grados
+ *
+ * Con scrollDriven=true el scrollOffset está 100% ligado al scroll
+ * del wrapper sticky: la ola no se mueve sola, la mueve el usuario.
+ * El texto entra por la DERECHA y sale por la IZQUIERDA.
+ */
+interface Props {
+  text?:        string;
+  srLabel?:     string;
+  amplitude?:   number;
+  wavelength?:  number;
+  charSpacing?: number;
+  offsetY?:     number;
+  /** Solo en modo NO scroll-driven: px avanzados por frame */
+  animSpeed?:   number;
+  /** Suavizado del lerp (0–1). Más bajo = más suave. */
+  lerpFactor?:  number;
+  /** true → la ola la mueve el scroll, no el tiempo */
+  scrollDriven?: boolean;
+}
+
+const {
+  text         = "Amoooooooooooooooooooollllllllllllllllll",
+  srLabel      = "Animación de texto ondulante.",
+  amplitude    = 90,
+  wavelength   = 1600,
+  charSpacing  = 38,
+  offsetY      = 170,
+  animSpeed    = 0.5,
+  lerpFactor   = 0.1,
+  scrollDriven = false,
+} = Astro.props;
+
+const chars      = text.split("");
+const totalWidth = chars.length * charSpacing;
+---
+
+<div
+  class="TextScroll"
+  id="text-scroll"
+  data-amplitude={amplitude}
+  data-wavelength={wavelength}
+  data-char-spacing={charSpacing}
+  data-offset-y={offsetY}
+  data-anim-speed={animSpeed}
+  data-lerp-factor={lerpFactor}
+  data-total={chars.length}
+  data-total-width={totalWidth}
+  data-scroll-driven={scrollDriven}
+>
+  <span class="visuallyhidden">{srLabel}</span>
+
+  {chars.map((char) => (
+    <span class="TextScroll--char" aria-hidden="true">{char}</span>
+  ))}
+</div>
+
+<script>
+  const el      = document.getElementById("text-scroll") as HTMLElement;
+  const charEls = el.querySelectorAll<HTMLElement>(".TextScroll--char");
+
+  const amplitude    = parseFloat(el.dataset.amplitude   ?? "90");
+  const wavelength   = parseFloat(el.dataset.wavelength  ?? "1600");
+  const charSpacing  = parseFloat(el.dataset.charSpacing ?? "38");
+  const offsetY      = parseFloat(el.dataset.offsetY     ?? "170");
+  const animSpeed    = parseFloat(el.dataset.animSpeed   ?? "0.5");
+  const lerpFactor   = parseFloat(el.dataset.lerpFactor  ?? "0.1");
+  const total        = parseInt  (el.dataset.total       ?? "22");
+  const totalWidth   = parseFloat(el.dataset.totalWidth  ?? "836");
+  const scrollDriven = el.dataset.scrollDriven === "true";
+
+  // offsetX centra el bloque de letras en x=0 (origen del contenedor)
+  const offsetX = -((total - 1) * charSpacing) / 2;
+
+  let offset       = 0;  // offset actual (lerpeado)
+  let targetOffset = 0;  // offset objetivo (dictado por scroll o tiempo)
+  let scrollProgress = 0;
+
+  /* ── Fuente del scroll (wrapper sticky) ── */
+  const wrapper = document.getElementById("hero-sticky-wrapper");
+  const hero    = document.getElementById("hero");
+
+  function onScroll() {
+    if (wrapper) {
+      const scrollableH = wrapper.offsetHeight - window.innerHeight;
+      const relScroll   = window.scrollY - wrapper.offsetTop;
+      scrollProgress    = Math.max(0, Math.min(relScroll / scrollableH, 1));
+    } else if (hero) {
+      scrollProgress = Math.min(window.scrollY / hero.offsetHeight, 1);
+    }
+
+    if (scrollDriven) {
+      // Viaje completo: derecha → centro → izquierda
+      // progress=0   → offset=-maxOffset  (fuera por la derecha)
+      // progress=0.5 → offset=0           (centrado)
+      // progress=1   → offset=+maxOffset  (fuera por la izquierda)
+      const maxOffset = window.innerWidth / 2 + totalWidth / 2;
+      targetOffset = -maxOffset + scrollProgress * 2 * maxOffset;
+    }
+  }
+
+  window.addEventListener("scroll", onScroll, { passive: true });
+  // Calcular estado inicial
+  onScroll();
+
+  /* ── Función de posicionamiento de cada carácter ── */
+  function getTransform(index: number, currentOffset: number) {
+    const x     = offsetX + index * charSpacing - currentOffset;
+    const angle = (x / wavelength) * 2 * Math.PI;
+    const y     = offsetY - amplitude * Math.sin(angle);
+    const dyDx  = amplitude * (2 * Math.PI / wavelength) * Math.cos(angle);
+    const rot   = -(Math.atan(dyDx) * (180 / Math.PI));
+    return { x, y, rot };
+  }
+
+  /* ── Loop de render ── */
+  function render() {
+    if (scrollDriven) {
+      // Lerp suave hacia el offset dictado por el scroll
+      offset += (targetOffset - offset) * lerpFactor;
+    } else {
+      // Modo autónomo: avanza solo
+      offset += animSpeed;
+      if (offset > totalWidth) offset = 0;
+    }
+
+    charEls.forEach((span, i) => {
+      const { x, y, rot } = getTransform(i, offset);
+      span.style.transform =
+        `translate(${x.toFixed(2)}px, ${y.toFixed(2)}px) rotate(${rot.toFixed(3)}deg)`;
+    });
+
+    requestAnimationFrame(render);
+  }
+
+  requestAnimationFrame(render);
+</script>
+
+<style>
+  .TextScroll {
+    position: relative;
+    width: 100%;
+    height: 340px;
+    overflow: visible; /* el hero.overflow:hidden recorta los bordes */
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+  }
+
+  .visuallyhidden {
+    position: absolute !important;
+    width: 1px; height: 1px;
+    padding: 0; margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  .TextScroll--char {
+    position: absolute;
+    top: 0; left: 50%;
+    display: inline-block;
+    font-size: 4rem;
+    font-weight: 700;
+    line-height: 1;
+    will-change: transform;
+  }
+</style>

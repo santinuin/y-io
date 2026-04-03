@@ -1,70 +1,69 @@
 ---
-import WaveText from "./WaveText.astro";
-const message = "Amoooooooooooooooooooooooollll";
+import TextScroll from "./TextScroll.astro";
 ---
 
 <!--
-  hero-sticky-wrapper: 300vh de alto
-  → el hero queda fijo (sticky) los primeros 100vh del viewport
-    mientras el usuario scrollea los 200vh de espacio de animación.
-  → cuando scrollProgress llega a 1, el sticky se "suelta" y
-    la sección de regalos sube naturalmente.
+  hero-sticky-wrapper: 300vh de alto.
+  El hero (100vh) se queda pegado al viewport mientras el usuario
+  scrollea los 200vh de espacio de animación.
+  Solo cuando scrollProgress llega a 1 (texto fuera por la izquierda)
+  el sticky se "suelta" y la sección de regalos sube.
 -->
 <div class="hero-sticky-wrapper" id="hero-sticky-wrapper">
   <section class="hero" id="hero">
-    <div class="hero-inner">
-      <WaveText
-        text={message}
-        amplitude={32}
-        frequency={0.85}
-        charWidth={24}
-        fontSize={34}
-        phaseRange={Math.PI * 2.5}
-        lerpFactor={0.12}
-        scrollDriven={true}
-      />
-      <div class="scroll-hint" id="scroll-hint">
-        <span>Bajá para ver tu sorpresa</span>
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-          <path d="M12 5v14M5 12l7 7 7-7" stroke="currentColor" stroke-width="2"
-                stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>
-      </div>
+
+    <TextScroll
+      text="Amoooooooooooooooooooollllllllllllllllll!!!!!"
+      srLabel="Animación de texto: Ricola"
+      amplitude={90}
+      wavelength={1600}
+      charSpacing={38}
+      offsetY={170}
+      lerpFactor={0.1}
+      scrollDriven={true}
+    />
+
+    <div class="scroll-hint" id="scroll-hint">
+      <span>Bajá para ver tu sorpresa</span>
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <path d="M12 5v14M5 12l7 7 7-7" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
     </div>
+
   </section>
 </div>
 
 <script>
-  const wrapper   = document.getElementById("hero-sticky-wrapper") as HTMLElement;
+  const wrapper    = document.getElementById("hero-sticky-wrapper") as HTMLElement;
   const scrollHint = document.getElementById("scroll-hint") as HTMLElement;
 
-  function onScroll() {
-    const scrollableH = wrapper.offsetHeight - window.innerHeight; // 200vh aprox
+  window.addEventListener("scroll", () => {
+    const scrollableH = wrapper.offsetHeight - window.innerHeight;
     const progress    = Math.min(window.scrollY / scrollableH, 1);
-
     // El hint desaparece en el primer 20% del scroll
     scrollHint.style.opacity = String(Math.max(0, 1 - progress * 5));
-  }
-
-  window.addEventListener("scroll", onScroll, { passive: true });
+  }, { passive: true });
 </script>
 
 <style>
-  /* Wrapper alto: da el espacio de scroll que "consume" la animación */
+  /* Wrapper de 300vh: da espacio para la animación sin mover la vista */
   .hero-sticky-wrapper {
     height: 300vh;
   }
 
-  /* El hero ocupa 100vh y se queda pegado al top mientras el wrapper scrollea */
+  /* El hero ocupa 100vh y se queda fijo mientras el wrapper scrollea */
   .hero {
     position: sticky;
     top: 0;
     height: 100vh;
     display: flex;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
     background: radial-gradient(ellipse at 50% 40%, #1e1040 0%, var(--color-bg) 70%);
     overflow: hidden;
+    gap: 2rem;
   }
 
   /* Estrellas decorativas */
@@ -82,24 +81,18 @@ const message = "Amoooooooooooooooooooooooollll";
     pointer-events: none;
   }
 
-  .hero-inner {
-    z-index: 1;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 3rem;
-  }
-
-  .hero-inner :global(.wt-char) {
+  /* Tipografía del texto ondulante */
+  .hero :global(.TextScroll--char) {
     color: var(--color-text);
     font-family: var(--font-display);
-    font-weight: 400;
     text-shadow:
       0 0 20px rgba(224, 64, 251, 0.5),
       0 0 50px rgba(124, 77, 255, 0.25);
   }
 
   .scroll-hint {
+    position: relative;
+    z-index: 1;
     display: flex;
     flex-direction: column;
     align-items: center;
