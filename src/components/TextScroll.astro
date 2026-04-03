@@ -84,8 +84,9 @@ const totalWidth = chars.length * charSpacing;
   const mc = document.createElement("canvas").getContext("2d")!;
   mc.font = font;
 
-  // Padding extra entre letras (px). Ajustá si querés más/menos aire.
-  const PAD = 6;
+  // Padding extra entre letras (px). No se aplica después de un espacio
+  // porque el espacio ya tiene su propio ancho visual.
+  const PAD = 4;
 
   const charWidths: number[] = Array.from(charEls).map(
     (s) => mc.measureText(s.textContent ?? " ").width
@@ -94,10 +95,15 @@ const totalWidth = chars.length * charSpacing;
   // Posición X del borde izquierdo de cada carácter (acumulada)
   const xPos: number[] = [];
   let cursor = 0;
-  charWidths.forEach((w) => { xPos.push(cursor); cursor += w + PAD; });
+  charWidths.forEach((w, i) => {
+    xPos.push(cursor);
+    // Los espacios ya son un gap visual — no les sumamos PAD extra
+    const isSpace = charEls[i].textContent === " " || charEls[i].textContent === "\u00A0";
+    cursor += w + (isSpace ? 0 : PAD);
+  });
 
-  const measuredTotal  = cursor - PAD;           // ancho total sin padding final
-  const measuredOffsetX = -measuredTotal / 2;    // para centrar en x=0
+  const measuredTotal   = cursor - PAD;        // ancho total sin padding final
+  const measuredOffsetX = -measuredTotal / 2;  // para centrar en x=0
 
   let offset       = 0;
   let targetOffset = 0;
@@ -127,12 +133,17 @@ const totalWidth = chars.length * charSpacing;
 
   /* ── Función de posicionamiento de cada carácter ── */
   function getTransform(index: number, currentOffset: number) {
-    // Centro del carácter (su mitad de ancho), desplazado por el offset
-    const x     = measuredOffsetX + xPos[index] + charWidths[index] / 2 - currentOffset;
-    const angle = (x / wavelength) * 2 * Math.PI;
-    const y     = offsetY - amplitude * Math.sin(angle);
-    const dyDx  = amplitude * (2 * Math.PI / wavelength) * Math.cos(angle);
-    const rot   = -(Math.atan(dyDx) * (180 / Math.PI));
+    // x: desplazamiento del BORDE IZQUIERDO del span desde el centro
+    // del contenedor. Como el span tiene left:50% (borde izq en el centro),
+    // translate(x) lo mueve a: containerCenter + x → borde izq del char.
+    const x = measuredOffsetX + xPos[index] - currentOffset;
+
+    // Para el ángulo de la ola usamos el CENTRO del carácter
+    const xCenter = x + charWidths[index] / 2;
+    const angle   = (xCenter / wavelength) * 2 * Math.PI;
+    const y       = offsetY - amplitude * Math.sin(angle);
+    const dyDx    = amplitude * (2 * Math.PI / wavelength) * Math.cos(angle);
+    const rot     = -(Math.atan(dyDx) * (180 / Math.PI));
     return { x, y, rot };
   }
 
